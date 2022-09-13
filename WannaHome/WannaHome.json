@@ -1,0 +1,14 @@
+{
+  "Author": "status102",
+  "Name": "Wanna Home",
+  "Punchline": "查看房区时记录数据并上传",
+  "Description": "查看房区时记录数据并上传，从网站获取空地信息",
+  "InternalName": "WannaHome",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "sample",
+    "plugin",
+    "goats"
+  ],
+  "DalamudApiLevel": 5
+}
