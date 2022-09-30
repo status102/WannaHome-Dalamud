@@ -97,7 +97,9 @@ namespace WannaHome.Window
 
 				#endregion
 				List<LandInfo> landList = new();
-				try { landList = WannaHome.landMap[WannaHome.serverId][WannaHome.territoryId][WannaHome.wardId]; } catch (KeyNotFoundException) {
+				try {
+					landList = WannaHome.landMap[WannaHome.serverId][WannaHome.territoryId][WannaHome.wardId];
+				} catch (KeyNotFoundException) {
 					for (int i = 0; i < 60; i++)
 						landList.Add(new());
 				}
@@ -149,7 +151,7 @@ namespace WannaHome.Window
 					Config.Token.ForEach(async token =>
 					{
 						if (token.serverId != WannaHome.sendServerId) { } else if (!token.enable || string.IsNullOrEmpty(token.url) || string.IsNullOrEmpty(token.token)) { } else {
-							var title = string.Format("<{0:} {1:}-{2:}{3:}>手动", token.nickname, Data.Server.ServerMap[WannaHome.sendServerId], Data.Territory.TerritoriesMap[WannaHome.sendTerritoryId].nickName, WannaHome.sendWardId + 1);
+							var title = string.Format("<{0:} {1:}-{2:}{3:}区>手动", token.nickname, Data.Server.ServerMap[WannaHome.sendServerId], Data.Territory.TerritoriesMap[WannaHome.sendTerritoryId].nickName, WannaHome.sendWardId + 1);
 							try {
 								var res = await API.Web.UploadWardLand(token.url, WannaHome.sendServerId, WannaHome.sendTerritoryId, WannaHome.sendWardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
 								if (res != null) {
@@ -172,7 +174,7 @@ namespace WannaHome.Window
 			}
 		}
 
-		private void DrawLandTable(bool isExtra, IReadOnlyList<LandInfo>landList) {
+		private void DrawLandTable(bool isExtra, IReadOnlyList<LandInfo> landList) {
 
 			if (ImGui.BeginTable("##房屋信息表", 4, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersInnerV)) {
 
@@ -184,7 +186,7 @@ namespace WannaHome.Window
 				ImGui.TableHeadersRow();
 				for (int i = 0; i < 15; i++) {
 					ImGui.TableNextRow();
-					DrawLandText((isExtra?30:0) + i, landList);
+					DrawLandText((isExtra ? 30 : 0) + i, landList);
 					DrawLandText((isExtra ? 30 : 0) + i + 15, landList);
 				}
 				ImGui.EndTable();

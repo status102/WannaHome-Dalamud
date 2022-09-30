@@ -68,11 +68,12 @@ namespace WannaHome
 
 			this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
 			{
-				HelpMessage = "A useful message to display in /xlhelp"
+				HelpMessage = "打开主界面；\n/wh cfg打开设置界面"
 			});
 
 			this.PluginInterface.UiBuilder.Draw += DrawUI;
 			this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+			this.ClientState.Login += Login;
 			LoadLandMap();
 		}
 
@@ -81,6 +82,7 @@ namespace WannaHome
 			this.Calculate.Dispose();
 			this.PluginUi.Dispose();
 			this.CommandManager.RemoveHandler(commandName);
+			this.ClientState.Login -= Login;
 			this.PluginInterface.UiBuilder.Draw -= DrawUI;
 			this.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 		}
@@ -146,5 +148,11 @@ namespace WannaHome
 				}
 			});
 
+		public void Login(object? sender, EventArgs e) {
+			Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ =>
+			{
+
+			});
+		}
 	}
 }

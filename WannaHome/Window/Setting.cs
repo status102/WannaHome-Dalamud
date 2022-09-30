@@ -131,10 +131,18 @@ namespace WannaHome.Window
 					}
 					ImGui.SameLine();
 					if (ImGuiComponents.IconButton(-3, FontAwesomeIcon.PlusCircle)) {
-						foreach (var pair in Configuration.defaultToken) {
-							Config.Token.Add(new() { enable = true, serverId = pair.Key, nickname = "猹", url = "https://home.iinformation.info/api/sync_ngld/", token = pair.Value });
+						Dictionary<string, ushort> map = new();
+						foreach (var pair in Data.Server.ServerMap) {
+							map.Add(pair.Value, pair.Key);
 						}
+						foreach (var pair in Configuration.defaultToken) {
+							if (map.ContainsKey(pair.Key))
+								Config.Token.Add(new() { enable = true, serverId = map[pair.Key], nickname = "冰音", url = "https://wanahome.ffxiv.bingyin.org/api/sync_ngld/", token = pair.Value });
+						}
+						Config.Save();
 					}
+					if (ImGui.IsItemHovered())
+						ImGui.SetTooltip("添加默认Token");
 				}
 				ImGui.End();
 			}
