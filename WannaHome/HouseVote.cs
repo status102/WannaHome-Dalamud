@@ -40,7 +40,7 @@ namespace WannaHome
 					territoryId = data.TerritoryId;
 					wardId = data.WardId;
 					houseId = data.HouseId;
-					clientTrigger = true;
+					//clientTrigger = true;
 				}
 				Upload();
 			} else if (data.ActionId == 0x0451) {
@@ -53,6 +53,7 @@ namespace WannaHome
 					wardId = data.WardId;
 					houseId = data.HouseId;
 					clientTrigger = true;
+					PluginLog.Debug("摇号中");
 				}
 				Upload();
 			}
@@ -71,13 +72,15 @@ namespace WannaHome
 					saleType = (ushort)data.AvailableType;
 					voteInfo = true;
 					type = (ushort)(((byte)data.PurchaseType << 1) + ((byte)data.TenantType >> 1));// 1抽奖 1抢 1个人0部队
+					PluginLog.Debug($"VoteCount：{data.VoteCount}，winner：{data.WinnerIndex}，endTime：{data.EndTime}，available：{(ushort)data.AvailableType}，PurchaseType：{(ushort)data.PurchaseType}，TenantType：{(ushort)data.TenantType}");
 				}
 			}
 		}
 
 		private void Upload() {
 			lock (obj) {
-				if (available || saleType > 1) {
+				if (voteInfo && ((saleType == (ushort)AvailableType.LotteryResult && winnerIndex > 0) || clientTrigger)) {
+					PluginLog.Debug($"上传数据：voteInfo：{voteInfo}，clientTrigger：{clientTrigger}，saleType：{saleType}");
 					var serverId = this.serverId;
 					var territoryId = this.territoryId;
 					var wardId = this.wardId;
