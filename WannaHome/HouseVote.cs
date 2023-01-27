@@ -1,4 +1,5 @@
-﻿using Dalamud.Logging;
+﻿using Dalamud.Game.Gui;
+using Dalamud.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -100,34 +101,38 @@ namespace WannaHome
 						else if (saleType == 3)
 							note = "准备中";
 
-						var ter = WannaHome.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.HousingLandSet>()?.FirstOrDefault(r => r.RowId == territoryList.IndexOf(territoryId));
+						var territory = WannaHome.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.HousingLandSet>()?.FirstOrDefault(r => r.RowId == territoryList.IndexOf(territoryId));
 						byte size = 0;
 						uint price = 0;
-						if (ter != null) {
-							size = ter.PlotSize[houseId];
-							price = ter.InitialPrice[houseId];
+						if (territory != null) {
+							size = territory.PlotSize[houseId];
+							price = territory.InitialPrice[houseId];
 						}
 						try {
 							var res = await API.Web.UpdateVoteInfo(serverId, territoryId, wardId, houseId, size, type, note, saleType, price, voteCount, winnerIndex, CancellationToken.None);
-							PluginLog.Information($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>参与：{voteCount}人\n{res}");
+							var prefix = $"[{WannaHome.Name}]<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>";
+							PluginLog.Debug(prefix + $"请求返回：\n{res}");
 							if (res == "null") {
 								if (saleType == 1) {
-									WannaHome.ChatGui.Print($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>成功，参与：{voteCount}人");
-									PluginLog.Information($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>成功，参与：{voteCount}人");
+									WannaHome.ChatGui.Print(prefix + $"上传成功，参与：{voteCount}人");
+									PluginLog.Information(prefix + $"上传成功，参与：{voteCount}人");
 								} else if (saleType == 2) {
-									WannaHome.ChatGui.Print($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>成功，参与：{voteCount}人，中奖：{winnerIndex}号");
-									PluginLog.Information($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>成功，参与：{voteCount}人，中奖：{winnerIndex}号");
+									WannaHome.ChatGui.Print(prefix + $"上传成功，参与：{voteCount}人，中奖：{winnerIndex}号");
+									PluginLog.Information(prefix + $"上传成功，参与：{voteCount}人，中奖：{winnerIndex}号");
 								} else if (saleType == 3) {
-									WannaHome.ChatGui.Print($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>成功，房屋准备中");
-									PluginLog.Information($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>成功，房屋准备中");
+									WannaHome.ChatGui.Print(prefix + $"上传成功，房屋准备中");
+									PluginLog.Information(prefix + $"上传成功，房屋准备中");
+								} else {
+									WannaHome.ChatGui.PrintError(prefix + $"上传成功，房屋状态不明[{saleType}]");
+									PluginLog.Warning(prefix + $"上传成功，房屋状态不明[{saleType}]");
 								}
 							} else {
-								PluginLog.Warning($"上传<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>结果不明，参与：{voteCount}人，中奖：{winnerIndex}号，到期：{endTime}\nres：${res}");
+								PluginLog.Warning(prefix + $"请求失败，参与：{voteCount}人，中奖：{winnerIndex}号，到期：{endTime}\nres：${res}");
 							}
 						} catch (KeyNotFoundException) {
 							PluginLog.Warning($"刷新过快");
 						} catch (Exception e) {
-							PluginLog.Warning($"上传<serverId：{serverId} territoryId：{territoryId} wardId：{wardId} houseId：{houseId}>失败：\n{e}");
+							PluginLog.Warning($"上传<serverId：{serverId} territoryId：{territoryId} wardId：{wardId} houseId：{houseId}>失败：\nException：{e}");
 						}
 					});
 				}
