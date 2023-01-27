@@ -44,14 +44,13 @@ namespace WannaHome.API
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			var body = await content.ReadAsStringAsync();
 			var str = await res.Content.ReadAsStringAsync(cancellationToken);
 			if (!res.IsSuccessStatusCode) {
-				PluginLog.Error(uriBuilder.Uri + $"失败{res.StatusCode}：Content:{ss}；Response：" + str);//{string.Join('&', data.Select(i => $"{i.Key}={i.Value}"))}
+				PluginLog.Error(uriBuilder.Uri + $"，请求失败\nHTTP Status Code：{(int)res.StatusCode}-{res.StatusCode}；\nContent:{ss}；\nResponse：" + str);
 				return "";
 			}
 
-			return str;//JsonSerializer.Deserialize<SyncNgld>(str);
+			return str;
 		}
 		public static async Task<SyncNgld?> UploadWardLand(string url, ushort server, ushort territory_id, ushort ward_id, string data, CancellationToken cancellationToken) {
 			var uriBuilder = new UriBuilder(url);//	($"https://home.iinformation.info/api/sync_ngld/");

@@ -8,7 +8,9 @@ namespace WannaHome.Model.WanaHome
 {
 	public  class UpdateVoteInfo
 	{
+		//服务器ID
 		public ushort server { get; set; }
+		//房区
 		public ushort territory { get; set; }
 		public ushort ward { get; set; }
 		public ushort housenumber { get; set; }
@@ -19,5 +21,6 @@ namespace WannaHome.Model.WanaHome
 		public uint price { get; set; }
 		public uint votecount { get; set; }
 		public uint winner { get; set; }
+		public string plugin_version { get; set; } = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
 	}
 }
