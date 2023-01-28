@@ -12,6 +12,10 @@
 
 https://raw.githubusercontent.com/status102/WannaHome-Dalamud/main/repo.json
 
+对于网络环境不佳的用户，请使用镜像链接来获取插件
+
+https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/repo_mirror.json
+
 ## 联动插件
 
 可搭配Mirai插件（[WannaHome-kt](https://github.com/status102/WannaHome-kt)）使用，在QQ群中提供空地查询指令“/空地+服务器or大区”。

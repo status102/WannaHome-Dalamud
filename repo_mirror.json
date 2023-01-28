@@ -1,0 +1,20 @@
+[
+	{
+		"Author": "status102",
+		"Name": "Wanna Home",
+		"InternalName": "WannaHome",
+		"AssemblyVersion": "0.0.3.1",
+		"Description": "查看房区时记录数据并上传，从网站获取空地信息",
+		"RepoUrl": "https://git.iid.zone/ffxiv/WannaHome-Dalamud",
+		"ApplicableVersion": "any",
+		"IsHide": false,
+		"IsTestingExclusive": false,
+		"DalamudApiLevel": 7,
+		"LoadPriority": 0,
+		"Punchline": "查看房区时记录数据并上传，上传摇号数据",
+		"DownloadLinkInstall": "https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/latest.zip",
+		"DownloadLinkUpdate": "https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/latest.zip",
+		"DownloadLinkTesting": "https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/latest.zip",
+		"Changelog": "-0.0.3.1 调整上传Log输出"
+	}
+]
