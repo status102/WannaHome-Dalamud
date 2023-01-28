@@ -4,13 +4,15 @@
 
 当点击一个空地的门牌时，自动上传地皮状态（可参与、公示期、准备中）、参与抽奖人数、中奖编号、开奖时间至第三方平台。
 
+上传地皮状态时，会附加上传者的所属服务器ID、玩家实体ID（非玩家名）用于区分上传者。
+
 ## 安装
 
 在第三方仓库设置中输入repo.json的链接
 
 https://raw.githubusercontent.com/status102/WannaHome-Dalamud/main/repo.json
 
-## 额外
+## 联动插件
 
 可搭配Mirai插件（[WannaHome-kt](https://github.com/status102/WannaHome-kt)）使用，在QQ群中提供空地查询指令“/空地+服务器or大区”。
 
