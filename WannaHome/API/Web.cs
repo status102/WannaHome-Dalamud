@@ -13,7 +13,7 @@ namespace WannaHome.API
 {
 	public class Web
 	{
-		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex,uint? serverName , uint? playerId , CancellationToken cancellationToken) {
+		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex,uint? uploaderHomeServerId , ulong uploaderId , CancellationToken cancellationToken) {
 			var uriBuilder = new UriBuilder("https://home-api.iinformation.info/v2/update/");
 
 			UpdateVoteInfo voteInfo = new()
@@ -31,8 +31,8 @@ namespace WannaHome.API
 				winner = winnerIndex
 			};
 			var content_string = JsonSerializer.Serialize(voteInfo);
-			string _serverName = serverName?.ToString() ?? "unknown";
-			string _playerName = playerId?.ToString() ?? "unknown";
+			string _serverName = uploaderHomeServerId?.ToString() ?? "unknown";
+			string _playerName = uploaderId.ToString();
 			var content = new StringContent(content_string);
 			content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {voteInfo.plugin_version}");

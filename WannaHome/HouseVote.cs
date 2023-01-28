@@ -104,7 +104,7 @@ namespace WannaHome
 
 						//获取玩家所属服务器ID和个人ID，不使用玩家名，仅上传ID用于区分上传用户
 						uint? _homeServerId = WannaHome.ClientState.LocalPlayer?.CurrentWorld.GameData?.RowId;
-						uint? _playerId = WannaHome.ClientState.LocalPlayer?.ObjectId;
+						ulong _playerId = WannaHome.ClientState.LocalContentId;
 
 						var territory = WannaHome.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.HousingLandSet>()?.FirstOrDefault(r => r.RowId == territoryList.IndexOf(territoryId));
 						byte size = 0;
