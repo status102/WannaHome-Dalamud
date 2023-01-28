@@ -13,7 +13,7 @@ namespace WannaHome.API
 {
 	public class Web
 	{
-		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex, CancellationToken cancellationToken) {
+		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex, CancellationToken cancellationToken, string? serverName = null, string? playerId = null) {
 			var uriBuilder = new UriBuilder("https://home-api.iinformation.info/v2/update/");
 
 			var ss = JsonSerializer.Serialize<UpdateVoteInfo>(new()
@@ -30,9 +30,11 @@ namespace WannaHome.API
 				votecount = voteCount,
 				winner = winnerIndex
 			});
-
+			string _serverName = serverName ?? "unknown";
+			string _playerName = playerId ?? "unknown";
 			var content = new StringContent(ss);
 			content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName};{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0"}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 

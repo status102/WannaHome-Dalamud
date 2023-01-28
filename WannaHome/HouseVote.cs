@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.Gui;
+﻿using Dalamud.Game.ClientState;
+using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using System;
 using System.Collections.Generic;
@@ -101,6 +102,10 @@ namespace WannaHome
 						else if (saleType == 3)
 							note = "准备中";
 
+						//获取玩家所属服务器ID和个人ID，不使用玩家名，仅上传ID用于区分上传用户
+						uint? _homeServerId = WannaHome.ClientState.LocalPlayer?.CurrentWorld.GameData?.RowId;
+						uint? _playerId = WannaHome.ClientState.LocalPlayer?.NameId;
+
 						var territory = WannaHome.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.HousingLandSet>()?.FirstOrDefault(r => r.RowId == territoryList.IndexOf(territoryId));
 						byte size = 0;
 						uint price = 0;
@@ -109,7 +114,7 @@ namespace WannaHome
 							price = territory.InitialPrice[houseId];
 						}
 						try {
-							var res = await API.Web.UpdateVoteInfo(serverId, territoryId, wardId, houseId, size, type, note, saleType, price, voteCount, winnerIndex, CancellationToken.None);
+							var res = await API.Web.UpdateVoteInfo(serverId, territoryId, wardId, houseId, size, type, note, saleType, price, voteCount, winnerIndex, _homeServerId, _playerId,CancellationToken.None);
 							var prefix = $"[{WannaHome.Name}]<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>";
 							PluginLog.Debug(prefix + $"请求返回：\n{res}");
 							if (res == "null") {
