@@ -3,7 +3,7 @@
 		"Author": "status102",
 		"Name": "Wanna Home",
 		"InternalName": "WannaHome",
-		"AssemblyVersion": "0.0.3.1",
+		"AssemblyVersion": "0.0.3.3",
 		"Description": "查看房区时记录数据并上传，从网站获取空地信息",
 		"RepoUrl": "https://github.com/status102/WannaHome-Dalamud",
 		"ApplicableVersion": "any",
