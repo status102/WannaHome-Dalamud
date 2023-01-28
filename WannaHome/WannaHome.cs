@@ -20,6 +20,7 @@ namespace WannaHome
 {
 	public sealed class WannaHome : IDalamudPlugin
 	{
+		public static WannaHome? Instance { get; private set; }
 		public string Name => "Wanna Home";
 
 		private const string commandName = "/wh";
@@ -50,6 +51,7 @@ namespace WannaHome
 			[RequiredVersion("1.0")] GameNetwork gameNetwork,
 			[RequiredVersion("1.0")] DataManager dataManager
 		) {
+			Instance = this;
 			this.PluginInterface = pluginInterface;
 			this.CommandManager = commandManager;
 			this.ClientState = clientState;

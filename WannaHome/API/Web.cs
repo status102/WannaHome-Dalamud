@@ -13,10 +13,10 @@ namespace WannaHome.API
 {
 	public class Web
 	{
-		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex, CancellationToken cancellationToken) {
+		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex,uint? serverName , uint? playerId , CancellationToken cancellationToken) {
 			var uriBuilder = new UriBuilder("https://home-api.iinformation.info/v2/update/");
 
-			var ss = JsonSerializer.Serialize<UpdateVoteInfo>(new()
+			UpdateVoteInfo voteInfo = new()
 			{
 				server = serverId,
 				territory = territoryId,
@@ -29,10 +29,13 @@ namespace WannaHome.API
 				price = price,
 				votecount = voteCount,
 				winner = winnerIndex
-			});
-
-			var content = new StringContent(ss);
+			};
+			var content_string = JsonSerializer.Serialize(voteInfo);
+			string _serverName = serverName?.ToString() ?? "unknown";
+			string _playerName = playerId?.ToString() ?? "unknown";
+			var content = new StringContent(content_string);
 			content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {voteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -46,7 +49,7 @@ namespace WannaHome.API
 
 			var str = await res.Content.ReadAsStringAsync(cancellationToken);
 			if (!res.IsSuccessStatusCode) {
-				PluginLog.Error(uriBuilder.Uri + $"，请求失败\nHTTP Status Code：{(int)res.StatusCode}-{res.StatusCode}；\nContent:{ss}；\nResponse：" + str);
+				PluginLog.Error(uriBuilder.Uri + $"，请求失败\nHTTP Status Code：{(int)res.StatusCode}-{res.StatusCode}；\nContent:{content_string}；\nResponse：" + str);
 				return "";
 			}
 
