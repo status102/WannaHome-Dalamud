@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using WannaHome.Model.Structure;
 using WannaHome.Model.WanaHome;
 
 namespace WannaHome.API
@@ -16,7 +17,7 @@ namespace WannaHome.API
 		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex,uint? uploaderHomeServerId , ulong uploaderId , CancellationToken cancellationToken) {
 			var uriBuilder = new UriBuilder("https://home-api.iinformation.info/v2/update/");
 
-			UpdateVoteInfo voteInfo = new()
+			UploadVoteInfo voteInfo = new()
 			{
 				server = serverId,
 				territory = territoryId,
@@ -35,7 +36,7 @@ namespace WannaHome.API
 			string _playerName = uploaderId.ToString();
 			var content = new StringContent(content_string);
 			content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {voteInfo.plugin_version}");
+			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {UpdateVoteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -65,6 +66,7 @@ namespace WannaHome.API
 				{ new("data", data) } };//{new("data",HttpUtility.UrlEncode(enc))
 
 			var content = new FormUrlEncodedContent(post);
+			content.Headers.Add("User-Agent", $"{WannaHome.Instance?.Name} {UpdateVoteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
