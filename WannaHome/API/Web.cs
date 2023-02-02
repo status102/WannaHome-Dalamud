@@ -7,14 +7,13 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using WannaHome.Model.Structure;
 using WannaHome.Model.WanaHome;
 
 namespace WannaHome.API
 {
 	public class Web
 	{
-		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex,uint? uploaderHomeServerId , ulong uploaderId , CancellationToken cancellationToken) {
+		public static async Task<string> UpdateVoteInfo(ushort serverId, ushort territoryId, ushort wardId, ushort houseId, byte size, ushort type, string owner, ushort isShell, uint price, uint voteCount, uint winnerIndex, uint? uploaderHomeServerId, ulong uploaderId, CancellationToken cancellationToken) {
 			var uriBuilder = new UriBuilder("https://home-api.iinformation.info/v2/update/");
 
 			UploadVoteInfo voteInfo = new()
@@ -36,11 +35,12 @@ namespace WannaHome.API
 			string _playerName = uploaderId.ToString();
 			var content = new StringContent(content_string);
 			content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {UploadVoteInfo.plugin_version}");
+			//content.Headers.Add("user-agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {UploadVoteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
 			using var client = new HttpClient();
+			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", UploadVoteInfo.plugin_version));
 			//client.DefaultRequestHeaders.Accept.Add().Add("Content-Type", "application/json");
 			var res = await client
 			  .PostAsync(uriBuilder.Uri, content, cancellationToken)
@@ -66,11 +66,15 @@ namespace WannaHome.API
 				{ new("data", data) } };//{new("data",HttpUtility.UrlEncode(enc))
 
 			var content = new FormUrlEncodedContent(post);
-			content.Headers.Add("User-Agent", $"{WannaHome.Instance?.Name} {UploadVoteInfo.plugin_version}");
+			//content.Headers.Add("user-agent", $"{WannaHome.Instance?.Name} {UploadVoteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
 			using var client = new HttpClient();
+			var ua = client.DefaultRequestHeaders.UserAgent;
+			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", UploadVoteInfo.plugin_version));
+			
+
 			var res = await client
 			  .PostAsync(uriBuilder.Uri, content, cancellationToken)
 			  .ConfigureAwait(false);
