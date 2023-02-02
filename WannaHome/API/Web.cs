@@ -36,7 +36,7 @@ namespace WannaHome.API
 			string _playerName = uploaderId.ToString();
 			var content = new StringContent(content_string);
 			content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {UpdateVoteInfo.plugin_version}");
+			content.Headers.Add("User-Agent", $"{_serverName}-{_playerName}/{WannaHome.Instance?.Name} {UploadVoteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -66,7 +66,7 @@ namespace WannaHome.API
 				{ new("data", data) } };//{new("data",HttpUtility.UrlEncode(enc))
 
 			var content = new FormUrlEncodedContent(post);
-			content.Headers.Add("User-Agent", $"{WannaHome.Instance?.Name} {UpdateVoteInfo.plugin_version}");
+			content.Headers.Add("User-Agent", $"{WannaHome.Instance?.Name} {UploadVoteInfo.plugin_version}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
