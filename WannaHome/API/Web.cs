@@ -40,7 +40,7 @@ namespace WannaHome.API
 			cancellationToken.ThrowIfCancellationRequested();
 
 			using var client = new HttpClient();
-			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", UploadVoteInfo.plugin_version));
+			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", WannaHome.Version));
 			//client.DefaultRequestHeaders.Accept.Add().Add("Content-Type", "application/json");
 			var res = await client
 			  .PostAsync(uriBuilder.Uri, content, cancellationToken)
@@ -72,7 +72,7 @@ namespace WannaHome.API
 
 			using var client = new HttpClient();
 			var ua = client.DefaultRequestHeaders.UserAgent;
-			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", UploadVoteInfo.plugin_version));
+			client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", WannaHome.Version));
 			
 
 			var res = await client
