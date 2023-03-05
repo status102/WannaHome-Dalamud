@@ -22,6 +22,7 @@ namespace WannaHome
 	{
 		public static WannaHome? Instance { get; private set; }
 		public string Name => "Wanna Home";
+		public static string Version => System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
 
 		private const string commandName = "/wh";
 

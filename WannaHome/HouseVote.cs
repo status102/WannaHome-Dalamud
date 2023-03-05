@@ -115,20 +115,20 @@ namespace WannaHome
 						}
 						try {
 							var res = await API.Web.UpdateVoteInfo(serverId, territoryId, wardId, houseId, size, type, note, saleType, price, voteCount, winnerIndex, _homeServerId, _playerId,CancellationToken.None);
-							var prefix = $"[{WannaHome.Name}]<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>";
+							var prefix = $"<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>";
 							PluginLog.Debug(prefix + $"请求返回：\n{res}");
 							if (res == "null") {
 								if (saleType == 1) {
-									WannaHome.ChatGui.Print(prefix + $"上传成功，参与：{voteCount}人");
+									WannaHome.ChatGui.Print($"[{WannaHome.Name}]" + prefix + $"上传成功，参与：{voteCount}人");
 									PluginLog.Information(prefix + $"上传成功，参与：{voteCount}人");
 								} else if (saleType == 2) {
-									WannaHome.ChatGui.Print(prefix + $"上传成功，参与：{voteCount}人，中奖：{winnerIndex}号");
+									WannaHome.ChatGui.Print($"[{WannaHome.Name}]" + prefix + $"上传成功，参与：{voteCount}人，中奖：{winnerIndex}号");
 									PluginLog.Information(prefix + $"上传成功，参与：{voteCount}人，中奖：{winnerIndex}号");
 								} else if (saleType == 3) {
-									WannaHome.ChatGui.Print(prefix + $"上传成功，房屋准备中");
+									WannaHome.ChatGui.Print($"[{WannaHome.Name}]" + prefix + $"上传成功，房屋准备中");
 									PluginLog.Information(prefix + $"上传成功，房屋准备中");
 								} else {
-									WannaHome.ChatGui.PrintError(prefix + $"上传成功，房屋状态不明[{saleType}]");
+									WannaHome.ChatGui.PrintError($"[{WannaHome.Name}]" + prefix + $"上传成功，房屋状态不明[{saleType}]");
 									PluginLog.Warning(prefix + $"上传成功，房屋状态不明[{saleType}]");
 								}
 							} else {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WannaHome.Model.WanaHome
 {
-	public  class UpdateVoteInfo
+	public class UploadVoteInfo
 	{
 		//服务器ID
 		public ushort server { get; set; }
@@ -21,6 +21,6 @@ namespace WannaHome.Model.WanaHome
 		public uint price { get; set; }
 		public uint votecount { get; set; }
 		public uint winner { get; set; }
-		public string plugin_version { get; set; } = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
+		public string plugin_version { get; set; } = WannaHome.Version;
 	}
 }

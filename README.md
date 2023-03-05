@@ -8,13 +8,15 @@
 
 ## 安装
 
-在第三方仓库设置中输入repo.json的链接
+1. 在第三方仓库设置中输入repo.json的链接
 
-https://raw.githubusercontent.com/status102/WannaHome-Dalamud/main/repo.json
+    https://raw.githubusercontent.com/status102/WannaHome-Dalamud/main/repo.json
 
-对于网络环境不佳的用户，请使用镜像链接来获取插件
+    对于网络环境不佳的用户，请使用镜像链接来获取插件
 
-https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/repo_mirror.json
+    https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/repo_mirror.json
+
+2. 打开设置界面，添加token（已内置冰音的国服全大区token）
 
 ## 联动插件
 

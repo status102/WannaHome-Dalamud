@@ -34,7 +34,7 @@ namespace WannaHome
 			{
 				var land = new LandInfo(i);
 				if (land.isEmpty && land.GetSize() >= Config.alertSize)
-					WannaHome.ChatGui.Print($"{land.GetSizeStr()}：" + string.Format("{0:}{1:##}-{2:##}", Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.WardId + 1, landList.Count + 1));
+					WannaHome.ChatGui.Print($"[{WannaHome.Name}]{land.GetSizeStr()}：" + string.Format("{0:}{1:##}-{2:##}", Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.WardId + 1, landList.Count + 1));
 
 				landList.Add(land);
 			});
@@ -54,7 +54,7 @@ namespace WannaHome
 				Config.Token.ForEach(async token =>
 				{
 					if (token.serverId != wardLandInfo.Server) { } else if (!token.enable || string.IsNullOrEmpty(token.url) || string.IsNullOrEmpty(token.token)) { } else {
-						var title = string.Format("<{0:} {1:}-{2:}{3:}区>", token.nickname, Server.ServerMap[wardLandInfo.Server], Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.WardId + 1);
+						var title = string.Format("[{0:}]<{1:} {2:}-{3:}{4:}区>", WannaHome.Name,token.nickname.Take(2), Server.ServerMap[wardLandInfo.Server], Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.WardId + 1);
 						try {
 							var res = await API.Web.UploadWardLand(token.url, wardLandInfo.Server, wardLandInfo.TerritoryId, wardLandInfo.WardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
 							if (res != null) {
