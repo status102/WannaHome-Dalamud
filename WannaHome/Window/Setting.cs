@@ -74,7 +74,7 @@ namespace WannaHome.Window
 							ImGui.SetTooltip("点击后30秒内查看门牌信息手动刷新OpCode");
 					}
 				}
-				if (ImGui.CollapsingHeader("服务器Token")) {
+				if (ImGui.CollapsingHeader("wanahome服务器Token")) {
 					int count = 0;
 					Config.Token.ToList().ForEach((pair) =>
 					{
@@ -121,16 +121,19 @@ namespace WannaHome.Window
 						}
 
 						ImGui.SameLine();
-						if (ImGuiComponents.IconButton(index, FontAwesomeIcon.Trash)) {
+						ImGui.PushFont(UiBuilder.IconFont);
+						if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString()+$"##{index}" )) {
 							Config.Token.RemoveAt(index);
 							Config.Save();
 						}
+						ImGui.PopFont();
 					});
-					if (ImGuiComponents.IconButton(-2, FontAwesomeIcon.Plus)) {
+					#region 添加token按钮
+					if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus)) {
 						Config.Token.Add(new());
 					}
 					ImGui.SameLine();
-					if (ImGuiComponents.IconButton(-3, FontAwesomeIcon.PlusCircle)) {
+					if (ImGuiComponents.IconButton(FontAwesomeIcon.PlusCircle)) {
 						Dictionary<string, ushort> map = new();
 						foreach (var pair in Data.Server.ServerMap) {
 							map.Add(pair.Value, pair.Key);
@@ -142,7 +145,8 @@ namespace WannaHome.Window
 						Config.Save();
 					}
 					if (ImGui.IsItemHovered())
-						ImGui.SetTooltip("添加默认Token");
+						ImGui.SetTooltip("添加内置的冰音Token");
+					#endregion
 				}
 				ImGui.End();
 			}
