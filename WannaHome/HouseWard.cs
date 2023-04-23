@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WannaHome.Data;
 using WannaHome.Model;
+using WannaHome.Model.HouseHelper;
 using WannaHome.Structure;
 
 namespace WannaHome
@@ -19,6 +20,10 @@ namespace WannaHome
 		private Dictionary<ushort, Dictionary<ushort, List<ushort>>> successList = new();
 		private CancellationTokenSource? cancel;
 		private object obj = new();
+
+		private object houseHelperLock = new();
+		private List<Model.HouseHelper.Info> infoList = new();
+		private CancellationTokenSource? houseHelperCancel = null;
 
 		public void onHousingWardInfo(HousingWardInfo wardLandInfo) {
 			List<LandInfo> landList = new();
@@ -95,19 +100,7 @@ namespace WannaHome
 			// 上传到HouseHelper服务器
 			// todo 增加上传返回的输出
 			if (Config.UploadToHouseHelper) {
-				Task.Run(async () => {
-					try {
-						var response = await API.HouseHelper.PostHouseInfo(new() { info }, Config.HouseHelperToken, CancellationToken.None);
-
-						if (response == null) {
-							PluginLog.Warning("上传HouseHelper房区信息失败");
-						} else {
-							PluginLog.Log("上传房区信息请求成功：" + response);
-						}
-					} catch (Exception ex) {
-						PluginLog.Warning("上传房区信息失败e:" + ex.ToString());
-					}
-				});
+				CallUploadHouseHelper(info, Config.HouseHelperToken);
 			}
 		}
 		public void UploadSuccess(ushort server, ushort territoryId, ushort wardIndex) {
@@ -123,8 +116,7 @@ namespace WannaHome
 				}
 			}
 		}
-		private void CallPrintMsg() => CallPrintMsg(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(1));
-		private void CallPrintMsg(TimeSpan delay, TimeSpan outTime) {
+		private void CallPrintMsg() {
 
 			lock (obj) {
 				if (this.cancel != null) {
@@ -132,21 +124,21 @@ namespace WannaHome
 						this.cancel.Cancel();
 					} catch (ObjectDisposedException) { }
 					this.cancel.Dispose();
-					this.cancel = null;
 				}
 
 				var cancel = new CancellationTokenSource();
 				cancel.Token.Register(() => { cancel = null; });
-				cancel.CancelAfter(outTime);
-				Task.Delay(delay, cancel.Token).ContinueWith(_ => {
-					cancel.Token.ThrowIfCancellationRequested();
-					lock (obj) {
-						PrintMsg();
+				cancel.CancelAfter(TimeSpan.FromMinutes(1));
+				Task.Delay(TimeSpan.FromSeconds(30), cancel.Token)
+					.ContinueWith(_ => {
+						cancel.Token.ThrowIfCancellationRequested();
+						lock (obj) {
+							PrintMsg();
 
-						cancel.Dispose();
-						cancel = null;
-					}
-				}, cancel.Token);
+							cancel.Dispose();
+							cancel = null;
+						}
+					}, cancel.Token);
 				this.cancel = cancel;
 			}
 		}
@@ -183,6 +175,53 @@ namespace WannaHome
 			str.Append(">上传成功");
 			PluginLog.Information(str.ToString());
 			WannaHome.ChatGui.Print(str.ToString());
+		}
+
+		private void CallUploadHouseHelper(Model.HouseHelper.Info info, string? token) {
+			lock (houseHelperLock) {
+				if (houseHelperCancel != null) {
+					try {
+						houseHelperCancel.Cancel();
+					} catch (ObjectDisposedException) { }
+					houseHelperCancel.Dispose();
+					houseHelperCancel = null;
+				}
+				infoList.Add(info);
+
+				var cancel = new CancellationTokenSource();
+				cancel.Token.Register(() => { cancel = null; });
+				cancel.CancelAfter(TimeSpan.FromMinutes(1));
+				Task.Delay(TimeSpan.FromSeconds(20), cancel.Token)
+					.ContinueWith(_ => {
+						List<Info> list = new();
+						lock (houseHelperLock) {
+							infoList.ForEach(i => list.Add(i));
+							infoList.Clear();
+						}
+						cancel.Token.ThrowIfCancellationRequested();
+						UploadHouseHelper(list, token);
+
+						cancel.Dispose();
+						cancel = null;
+					}, cancel.Token);
+				houseHelperCancel = cancel;
+			}
+		}
+
+		private static void UploadHouseHelper(List<Info> infoList, string? token) {
+			Task.Run(async () => {
+				try {
+					var response = await API.HouseHelper.PostHouseInfo(infoList, token, CancellationToken.None);
+
+					if (response == null) {
+						PluginLog.Warning("上传HouseHelper房区信息失败");
+					} else {
+						PluginLog.Log("上传房区信息请求成功：" + response);
+					}
+				} catch (Exception ex) {
+					PluginLog.Warning("上传房区信息失败e:" + ex.ToString());
+				}
+			});
 		}
 
 		private void SaveLandList(ushort serverId, ushort territoryId, ushort wardId, List<LandInfo> landList) {
