@@ -21,7 +21,7 @@ namespace WannaHome.Model
 		/// <param name="data">["房主",价格]</param>
 		public string Encrypt(LandInfo[] data) {
 			var list = new List<List<object>>();
-			data.ToList().ForEach(landInfo => list.Add(new() { landInfo.hostName, landInfo.price }));
+			data.ToList().ForEach(landInfo => list.Add(new() { landInfo.Owner, landInfo.Price }));
 			var Encoder = Encoding.UTF8;
 			var tokenBytes = Encoder.GetBytes(token);
 			var dataBytes = Encoder.GetBytes(JsonConvert.SerializeObject(list));
