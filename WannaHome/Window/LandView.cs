@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Utility;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ using WannaHome.Model;
 
 namespace WannaHome.Window
 {
-	public class LandView : IDisposable
+    public class LandView : IDisposable
 	{
 		private static readonly Vector4 alertColor = new(255f / 255, 153f / 255, 164f / 255, 1);
 		private static readonly string[] Ward_Array = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24" };
@@ -153,7 +154,7 @@ namespace WannaHome.Window
 						if (token.serverId != WannaHome.sendServerId) { } else if (!token.enable || string.IsNullOrEmpty(token.url) || string.IsNullOrEmpty(token.token)) { } else {
 							var title = string.Format("<{0:} {1:}-{2:}{3:}区>手动", token.nickname, Data.Server.ServerMap[WannaHome.sendServerId], Data.Territory.TerritoriesMap[WannaHome.sendTerritoryId].nickName, WannaHome.sendWardId + 1);
 							try {
-								var res = await API.Web.UploadWardLand(token.url, WannaHome.sendServerId, WannaHome.sendTerritoryId, WannaHome.sendWardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
+								var res = await API.WanaHome.UploadWardLand(token.url, WannaHome.sendServerId, WannaHome.sendTerritoryId, WannaHome.sendWardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
 								if (res != null) {
 									if (res.code == 200) {
 										WannaHome.ChatGui.Print($"{title}上传成功");
@@ -200,23 +201,23 @@ namespace WannaHome.Window
 
 			if (i < landList.Count) {
 				if (!edit) {
-					if (!landList[i].isEmpty) {
-						ImGui.TextDisabled(landList[i].hostName);
+					if (!landList[i].Owner.IsNullOrEmpty()) {
+						ImGui.TextDisabled(landList[i].Owner);
 					} else {
-						if (landList[i].GetSize() >= Config.alertSize)
-							ImGui.TextColored(alertColor, $"{landList[i].price:#,##0}");
+						if (landList[i].GetSize() >= Config.AlertSize)
+							ImGui.TextColored(alertColor, $"{landList[i].Price:#,##0}");
 						else
-							ImGui.TextUnformatted($"{landList[i].price:#,##0}");
+							ImGui.TextUnformatted($"{landList[i].Price:#,##0}");
 					}
 				} else {
-					var editStr = $"{landList[i].hostName}/{landList[i].price:#,##0}";
+					var editStr = $"{landList[i].Owner}/{landList[i].Price:#,##0}";
 					if (ImGui.InputText($"##{i}-{editStr}", ref editStr, 256)) {
 						string[] array;
 						if ((array = editStr.Split('/')).Length == 2) {
-							landList[i].hostName = array[0];
+							landList[i].Owner = array[0];
 							landList[i].name = Array.Empty<byte>();
 							try {
-								landList[i].price = uint.Parse(array[1].Replace(",", ""));
+								landList[i].Price = uint.Parse(array[1].Replace(",", ""));
 							} catch (FormatException) { }
 						}
 					}

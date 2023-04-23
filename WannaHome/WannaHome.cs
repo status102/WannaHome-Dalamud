@@ -21,6 +21,7 @@ namespace WannaHome
 	public sealed class WannaHome : IDalamudPlugin
 	{
 		public static WannaHome? Instance { get; private set; }
+		public const string Plugin_Name = "WannaHome";
 		public string Name => "Wanna Home";
 		public static string Version => System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
 
@@ -63,9 +64,6 @@ namespace WannaHome
 			this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 			this.Configuration.Initialize(this.PluginInterface);
 
-			// you might normally want to embed resources and load them from the manifest stream
-			//var imagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-			// var goatImage = this.PluginInterface.UiBuilder.LoadImage(imagePath);
 			this.PluginUi = new PluginUI(this, this.Configuration);
 			this.Calculate = new Calculate(this);
 

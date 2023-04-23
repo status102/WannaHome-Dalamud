@@ -12,16 +12,14 @@ namespace WannaHome.Window
 	public class Setting : IDisposable
 	{
 		private readonly static string[] size = new string[] { "全部", "M & L", "L" };
-		//public bool settingShow = false;
+
 		private WannaHome WannaHome { get; init; }
 		private Configuration Config => WannaHome.Configuration;
 		private static IReadOnlyDictionary<ushort, string> ServerMap => Data.Server.ServerMap;
-
-		private List<string> serverList { get; init; }
+		private List<string> serverList { get; } = new();
 
 		public Setting(WannaHome wannaHome) {
 			this.WannaHome = wannaHome;
-			serverList = new();
 			serverList.Add($"==={Data.Server.LuXingNiao.Dc_Name}===");
 			serverList.AddRange(Data.Server.LuXingNiao.Dc_World.Values);
 			serverList.Add($"==={Data.Server.MoGuLi.Dc_Name}===");
@@ -33,53 +31,46 @@ namespace WannaHome.Window
 		}
 
 		public void Draw(ref bool settingShow) {
-			if (!settingShow)
-				return;
+			if (!settingShow) { return; }
 			if (ImGui.Begin("设置", ref settingShow)) {
 
 				if (ImGui.CollapsingHeader("其他设置", ImGuiTreeNodeFlags.DefaultOpen)) {
-					if (ImGui.Checkbox("Debug", ref Config.Debug)) {
-						Config.Save();
-					}
+					if (ImGui.Checkbox("Debug", ref Config.Debug)) { Config.Save(); }
 					if (Config.Debug) {
-						if (ImGui.Checkbox("SavePackage", ref Config.SavePackage)) {
+						if (ImGui.Checkbox("SavePackage", ref Config.SavePackage)) { Config.Save(); }
+						int op = Config.DebugOpcode;
+						if (ImGui.InputInt("Debug Opcode", ref op)) {
+							Config.DebugOpcode = (ushort)op;
 							Config.Save();
 						}
-						int op = Config.DebugOpCode;
-						if (ImGui.InputInt("Debug OpCode", ref op)) {
-							Config.DebugOpCode = (ushort)op;
-							Config.Save();
-						}
-						ImGui.TextUnformatted($"OpCode Version：{Config.GameVersion}");
-						ImGui.TextUnformatted($"ClientTrigger OpCode：{Config.ClientTriggerOpCode}");
-						ImGui.TextUnformatted($"VoteInfoOpCode OpCode：{Config.VoteInfoOpCode}");
+						ImGui.TextUnformatted($"Opcode Version：{Config.GameVersion}");
+						ImGui.TextUnformatted($"ClientTrigger Opcode：{Config.ClientTriggerOpcode}");
+						ImGui.TextUnformatted($"VoteInfoOpcode Opcode：{Config.VoteInfoOpcode}");
 					}
-					int index = Config.alertSize;
+					int index = Config.AlertSize;
 					if (ImGui.Combo("空地提醒等级", ref index, size, 3)) {
-						Config.alertSize = (byte)index;
+						Config.AlertSize = (byte)index;
 						Config.Save();
 					}
-					if (WannaHome.Calculate.captureOpCode) {
-						ImGui.TextUnformatted("正在手动刷新OpCode中");
+					if (WannaHome.Calculate.captureOpcode) {
+						ImGui.TextUnformatted("正在手动刷新opcode中");
 					} else {
-						if (ImGui.Button("刷新OpCode")) {
-							WannaHome.Calculate.CaptureOpCode();
-							Task.Run(() =>
-							{
+						if (ImGui.Button("刷新opcode")) {
+							WannaHome.Calculate.CaptureOpcode();
+							Task.Run(() => {
 								Thread.Sleep(30000);
 								WannaHome.Calculate.CaptureCancel();
 							});
 						}
-						if (ImGui.IsItemHovered())
-							ImGui.SetTooltip("点击后30秒内查看门牌信息手动刷新OpCode");
+						if (ImGui.IsItemHovered()) { ImGui.SetTooltip("点击后30秒内查看门牌信息手动刷新opcode"); }
 					}
 				}
-				if (ImGui.CollapsingHeader("wanahome服务器Token")) {
+				if (ImGui.CollapsingHeader("Wanahome上传Token")) {
 					int count = 0;
-					Config.Token.ToList().ForEach((pair) =>
-					{
+					Config.Token.ToList().ForEach((pair) => {
 						var index = count++;
 
+						ImGui.PushID(index);
 						var enable = pair.enable;
 						if (ImGui.Checkbox($"##{index}Enable", ref enable)) {
 							Config.Token[index].enable = enable;
@@ -122,12 +113,13 @@ namespace WannaHome.Window
 
 						ImGui.SameLine();
 						ImGui.PushFont(UiBuilder.IconFont);
-						if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString()+$"##{index}" )) {
+						if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString() + $"##{index}")) {
 							Config.Token.RemoveAt(index);
 							Config.Save();
 						}
 						ImGui.PopFont();
 					});
+					ImGui.PopID();
 					#region 添加token按钮
 					if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus)) {
 						Config.Token.Add(new());
@@ -147,6 +139,21 @@ namespace WannaHome.Window
 					if (ImGui.IsItemHovered())
 						ImGui.SetTooltip("添加内置的冰音Token");
 					#endregion
+				}
+
+				if (ImGui.CollapsingHeader("HouseHelper上传Token")) {
+					bool upload = Config.UploadToHouseHelper;
+					if(ImGui.Checkbox("上传到HouseHelper", ref upload)) {
+						Config.UploadToHouseHelper = upload;
+						Config.Save();
+					}
+					ImGui.SameLine();
+					ImGui.SetNextItemWidth(600);
+					string token = Config.HouseHelperToken;
+					if (ImGui.InputTextWithHint("", "请输入你的token，未输入时自动使用内置的默认token", ref token, 100)) {
+						Config.HouseHelperToken = token.Trim();
+						Config.Save();
+					}
 				}
 				ImGui.End();
 			}

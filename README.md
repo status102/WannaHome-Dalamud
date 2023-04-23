@@ -23,6 +23,11 @@
 可搭配Mirai插件（[WannaHome-kt](https://github.com/status102/WannaHome-kt)）使用，在QQ群中提供空地查询指令“/空地+服务器or大区”。
 
 ## 感谢支持
+
 - [猹（Cettiidae）](https://github.com/Cettiidae/Cettiidae)：https://home.iinformation.info/
 - 冰音：https://wanahome.ffxiv.bingyin.org/
 - Jim：https://househelper.ffxiv.cyou/#/about
+
+## PS
+
+屎山，满满的屎山

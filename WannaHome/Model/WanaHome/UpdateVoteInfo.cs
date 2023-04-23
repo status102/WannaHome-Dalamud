@@ -1,26 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using WannaHome.Structure;
 
 namespace WannaHome.Model.WanaHome
 {
 	public class UploadVoteInfo
 	{
-		//服务器ID
-		public ushort server { get; set; }
-		//房区
-		public ushort territory { get; set; }
-		public ushort ward { get; set; }
-		public ushort housenumber { get; set; }
-		public byte size { get; set; }
-		public ushort type { get; set; }
-		public string owner { get; set; } = "";
-		public ushort sell { get; set; }
-		public uint price { get; set; }
-		public uint votecount { get; set; }
-		public uint winner { get; set; }
-		public string plugin_version { get; set; } = WannaHome.Version;
+		public ushort server { get; init; }
+		public ushort territory { get; init; }
+		public ushort ward { get; init; }
+		public ushort housenumber { get; init; }
+		public byte size { get; init; }
+		public ushort type { get; init; }
+		public string owner { get; init; } = "";
+		public AvailableType sell { get; init; }
+		public uint price { get; init; }
+		public uint votecount { get; init; }
+		public uint winner { get; init; }
+		public string plugin_version { get; } = WannaHome.Version;
 	}
 }

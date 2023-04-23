@@ -8,71 +8,107 @@ using System.Threading;
 using System.Threading.Tasks;
 using WannaHome.Data;
 using WannaHome.Model;
-using WannaHome.Model.Structure;
+using WannaHome.Structure;
 
 namespace WannaHome
 {
 	public class HouseWard
 	{
 		private readonly WannaHome WannaHome;
-		private  Configuration Config => WannaHome.Configuration;
+		private Configuration Config => WannaHome.Configuration;
 		private Dictionary<ushort, Dictionary<ushort, List<ushort>>> successList = new();
 		private CancellationTokenSource? cancel;
 		private object obj = new();
 
-		public void onHousingWardInfo(HousingWardInfo? data) {
-
-			if (data == null || !data.HasValue)
-				return;
-			if (data.Value.Server == 0 || data.Value.TerritoryId == 0)
-				return;
-			onHousingWardInfo(data.Value);
-		}
 		public void onHousingWardInfo(HousingWardInfo wardLandInfo) {
 			List<LandInfo> landList = new();
-			wardLandInfo.HouseList.ToList().ForEach(i =>
-			{
-				var land = new LandInfo(i);
-				if (land.isEmpty && land.GetSize() >= Config.alertSize)
-					WannaHome.ChatGui.Print($"[{WannaHome.Name}]{land.GetSizeStr()}：" + string.Format("{0:}{1:##}-{2:##}", Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.WardId + 1, landList.Count + 1));
-
+			wardLandInfo.HouseList.ToList().ForEach(i => {
+				var land = new LandInfo(i.Name, (i.Info & 0b1_0000) == 0b1_0000) { Price = i.Price };
+				if (land.isEmpty && land.GetSize() >= Config.AlertSize) {
+					WannaHome.ChatGui.Print($"[{WannaHome.Plugin_Name}]{land.GetSizeStr()}：" + string.Format("{0:}{1:##}-{2:##}", Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.SlotId + 1, landList.Count + 1));
+				}
 				landList.Add(land);
 			});
+
+			#region HouseHelper数据初始化
+			Model.HouseHelper.Info info = new() {
+				Server = wardLandInfo.Server,
+				Territory = Territory.TerritoriesMap[wardLandInfo.TerritoryId].fullName,
+				Slot = wardLandInfo.SlotId,
+				PurchaseMain = wardLandInfo.PurchaseMain,
+				PurchaseSub = wardLandInfo.PurchaseSub,
+				RegionMain = wardLandInfo.RegionMain,
+				RegionSub = wardLandInfo.RegionSub
+			};
+			for (int i = 0; i < landList.Count; i++) {
+				info.HouseList.Add(new() {
+					Id = (uint)(i + 1),
+					Owner = landList[i].Owner,
+					Price = landList[i].Price,
+					Size = landList[i].GetSizeStr(),
+					Tag = wardLandInfo.HouseList[i].Tag.Select(i => (uint)i).ToList(),
+					IsPersonal = (wardLandInfo.HouseList[i].Info & 0b1_0000) != 0b1_0000,
+					IsEmpty = landList[i].isEmpty,
+					IsPublic = (wardLandInfo.HouseList[i].Info & 0b10) == 0b10,
+					HasGreeting = (wardLandInfo.HouseList[i].Info & 0b100) == 0b100
+				});
+
+			}
+			#endregion
+
 			if (WannaHome.serverId == WannaHome.sendServerId && WannaHome.territoryId == WannaHome.sendTerritoryId && WannaHome.wardId == WannaHome.sendWardId) {
 				WannaHome.sendServerId = wardLandInfo.Server;
 				WannaHome.sendTerritoryId = wardLandInfo.TerritoryId;
-				WannaHome.sendWardId = wardLandInfo.WardId;
+				WannaHome.sendWardId = wardLandInfo.SlotId;
 			}
 			WannaHome.serverId = wardLandInfo.Server;
 			WannaHome.territoryId = wardLandInfo.TerritoryId;
-			WannaHome.wardId = wardLandInfo.WardId;
-			SaveLandList(wardLandInfo.Server, wardLandInfo.TerritoryId, wardLandInfo.WardId, landList);
+			WannaHome.wardId = wardLandInfo.SlotId;
+			SaveLandList(wardLandInfo.Server, wardLandInfo.TerritoryId, wardLandInfo.SlotId, landList);
 			WannaHome.SaveLandMap();
 
-			Task.Run(() =>
-			{
-				Config.Token.ForEach(async token =>
-				{
-					if (token.serverId != wardLandInfo.Server) { } else if (!token.enable || string.IsNullOrEmpty(token.url) || string.IsNullOrEmpty(token.token)) { } else {
-						var title = string.Format("[{0:}]<{1:} {2:}-{3:}{4:}区>", WannaHome.Name,token.nickname.Take(2), Server.ServerMap[wardLandInfo.Server], Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.WardId + 1);
-						try {
-							var res = await API.Web.UploadWardLand(token.url, wardLandInfo.Server, wardLandInfo.TerritoryId, wardLandInfo.WardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
-							if (res != null) {
-								if (res.code == 200) {
-									PluginLog.Debug($"{title}上传成功");
-									UploadSuccess(wardLandInfo.Server, wardLandInfo.TerritoryId, (ushort)(wardLandInfo.WardId + 1));
-									output();
-								} else
-									PluginLog.Warning($"{title}上传失败：{res.code}-{res.msg}");
-							} else {
-								PluginLog.Error($"{title}上传出错：返回空");
-							}
-						} catch (HttpRequestException e) {
-							PluginLog.Error($"{title}上传出错：{e}");
+			// 上传到WanaHome服务器
+			Task.Run(() => {
+				Config.Token.Where(token => token.enable && token.serverId == wardLandInfo.Server && !string.IsNullOrEmpty(token.url) && !string.IsNullOrEmpty(token.token))
+				.ToList()
+				.ForEach(async token => {
+					var title = string.Format("[{0:}]<{1:} {2:}-{3:}{4:}区>", WannaHome.Plugin_Name, string.Join("", token.nickname.Take(2)), Server.ServerMap[wardLandInfo.Server], Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.SlotId + 1);
+					try {
+						// 房屋数据使用token加密
+						var res = await API.WanaHome.UploadWardLand(token.url, wardLandInfo.Server, wardLandInfo.TerritoryId, wardLandInfo.SlotId, token.Encrypt(landList.ToArray()), CancellationToken.None);
+						if (res != null) {
+							if (res.code == 200) {
+								PluginLog.Debug($"{title}上传成功");
+								UploadSuccess(wardLandInfo.Server, wardLandInfo.TerritoryId, (ushort)(wardLandInfo.SlotId + 1));
+								CallPrintMsg();
+							} else
+								PluginLog.Warning($"{title}上传失败：{res.code}-{res.msg}");
+						} else {
+							PluginLog.Error($"{title}上传出错：返回空");
 						}
+					} catch (HttpRequestException e) {
+						PluginLog.Error($"{title}上传出错：{e}");
 					}
 				});
 			});
+
+			// 上传到HouseHelper服务器
+			// todo 增加上传返回的输出
+			if (Config.UploadToHouseHelper) {
+				Task.Run(async () => {
+					try {
+						var response = await API.HouseHelper.PostHouseInfo(new() { info }, Config.HouseHelperToken, CancellationToken.None);
+
+						if (response == null) {
+							PluginLog.Warning("上传HouseHelper房区信息失败");
+						} else {
+							PluginLog.Log("上传房区信息请求成功：" + response);
+						}
+					} catch (Exception ex) {
+						PluginLog.Warning("上传房区信息失败e:" + ex.ToString());
+					}
+				});
+			}
 		}
 		public void UploadSuccess(ushort server, ushort territoryId, ushort wardIndex) {
 			lock (obj) {
@@ -87,8 +123,8 @@ namespace WannaHome
 				}
 			}
 		}
-		public void output() => output(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(3));
-		public void output(TimeSpan delay, TimeSpan outTime) {
+		private void CallPrintMsg() => CallPrintMsg(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(1));
+		private void CallPrintMsg(TimeSpan delay, TimeSpan outTime) {
 
 			lock (obj) {
 				if (this.cancel != null) {
@@ -102,11 +138,10 @@ namespace WannaHome
 				var cancel = new CancellationTokenSource();
 				cancel.Token.Register(() => { cancel = null; });
 				cancel.CancelAfter(outTime);
-				Task.Delay(delay, cancel.Token).ContinueWith(_ =>
-				{
+				Task.Delay(delay, cancel.Token).ContinueWith(_ => {
 					cancel.Token.ThrowIfCancellationRequested();
 					lock (obj) {
-						pp();
+						PrintMsg();
 
 						cancel.Dispose();
 						cancel = null;
@@ -115,7 +150,7 @@ namespace WannaHome
 				this.cancel = cancel;
 			}
 		}
-		public void pp() {
+		private void PrintMsg() {
 			var str = new StringBuilder("<");
 			foreach (var server in successList) {
 				str.Append(Server.ServerMap[server.Key]);
@@ -136,10 +171,11 @@ namespace WannaHome
 						}
 					}
 
-					if (list[^1] == start)
+					if (list[^1] == start) {
 						strList.Add(start.ToString());
-					else
+					} else {
 						strList.Add($"{start}-{list[^1]}");
+					}
 					str.Append($" {Territory.TerritoriesMap[territory.Key].nickName}：{String.Join(",", strList)}");
 				}
 			}
