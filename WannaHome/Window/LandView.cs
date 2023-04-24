@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Numerics;
 using System.Threading;
+using WannaHome.Common;
 using WannaHome.Model;
 
 namespace WannaHome.Window
@@ -157,14 +158,14 @@ namespace WannaHome.Window
 								var res = await API.WanaHome.UploadWardLand(token.url, WannaHome.sendServerId, WannaHome.sendTerritoryId, WannaHome.sendWardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
 								if (res != null) {
 									if (res.code == 200) {
-										WannaHome.ChatGui.Print($"{title}上传成功");
+										Service.ChatGui.Print($"{title}上传成功");
 									} else
-										WannaHome.ChatGui.PrintError($"{title}上传失败：{res.code}-{res.msg}");
+										Service.ChatGui.PrintError($"{title}上传失败：{res.code}-{res.msg}");
 								} else {
-									WannaHome.ChatGui.PrintError($"{title}上传出错：返回空");
+									Service.ChatGui.PrintError($"{title}上传出错：返回空");
 								}
 							} catch (HttpRequestException e) {
-								WannaHome.ChatGui.PrintError($"{title}上传出错：{e}");
+								Service.ChatGui.PrintError($"{title}上传出错：{e}");
 							}
 						}
 					});

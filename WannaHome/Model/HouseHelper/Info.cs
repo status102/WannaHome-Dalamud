@@ -14,11 +14,11 @@ namespace WannaHome.Model.HouseHelper
         /// </summary>
         [JsonPropertyName("server")]
         public uint Server { get; init; }
-		/// <summary>
-		/// 房区名称。请使用“海雾村”、“薰衣草苗圃”、“高脚孤丘”、“白银乡”、“穹顶皓天”
-		/// </summary>
-		[JsonPropertyName("area")]
-        public string Territory { get; init; }
+        /// <summary>
+        /// 房区名称。请使用“海雾村”、“薰衣草苗圃”、“高脚孤丘”、“白银乡”、“穹顶皓天”
+        /// </summary>
+        [JsonPropertyName("area")]
+        public string Territory { get; init; } = string.Empty;
 		/// <summary>
 		/// 小区号，从0
 		/// </summary>
@@ -59,7 +59,7 @@ namespace WannaHome.Model.HouseHelper
 			/// 房主
 			/// </summary>
 			[JsonPropertyName("owner")]
-            public string Owner { get; init; }
+            public string Owner { get; init; } = string.Empty;
 			/// <summary>
 			/// 价格
 			/// </summary>
@@ -69,7 +69,7 @@ namespace WannaHome.Model.HouseHelper
 			/// S、M、L
 			/// </summary>
 			[JsonPropertyName("size")]
-            public string Size { get; init; }
+            public string Size { get; init; } = string.Empty;
 			/// <summary>
 			/// 设置的Tag，整数数组，不使用
 			/// </summary>

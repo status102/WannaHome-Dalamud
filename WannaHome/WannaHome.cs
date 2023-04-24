@@ -1,5 +1,4 @@
 ﻿using Dalamud.Data;
-using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
@@ -7,13 +6,13 @@ using Dalamud.Game.Network;
 using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using WannaHome.Common;
 using WannaHome.Model;
 
 namespace WannaHome
@@ -29,12 +28,7 @@ namespace WannaHome
 
 		public DalamudPluginInterface PluginInterface { get; init; }
 		public PluginUI PluginUi { get; init; }
-		public CommandManager CommandManager { get; init; }
 		public Configuration Configuration { get; init; }
-		public ClientState ClientState { get; init; }
-		public ChatGui ChatGui { get; init; }
-		public GameNetwork GameNetwork { get; init; }
-		public DataManager DataManager { get; init; }
 		public Calculate Calculate { get; init; }
 
 		/// <summary>
@@ -46,46 +40,37 @@ namespace WannaHome
 		public ushort sendServerId, sendTerritoryId, sendWardId;
 
 		public WannaHome(
-			[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-			[RequiredVersion("1.0")] CommandManager commandManager,
-			[RequiredVersion("1.0")] ClientState clientState,
-			[RequiredVersion("1.0")] ChatGui chatGui,
-			[RequiredVersion("1.0")] GameNetwork gameNetwork,
-			[RequiredVersion("1.0")] DataManager dataManager
+			[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface
 		) {
 			Instance = this;
-			this.PluginInterface = pluginInterface;
-			this.CommandManager = commandManager;
-			this.ClientState = clientState;
-			this.ChatGui = chatGui;
-			this.GameNetwork = gameNetwork;
-			this.DataManager = dataManager;
+			PluginInterface = pluginInterface;
+			Service.Initialize(pluginInterface);
 
-			this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-			this.Configuration.Initialize(this.PluginInterface);
 
-			this.PluginUi = new PluginUI(this, this.Configuration);
-			this.Calculate = new Calculate(this);
+			Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+			Configuration.Initialize(this.PluginInterface);
 
-			this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
-			{
+			PluginUi = new PluginUI(this, Configuration);
+			Calculate = new Calculate(this);
+
+			Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand) {
 				HelpMessage = "打开主界面；\n/wh cfg打开设置界面"
 			});
 
-			this.PluginInterface.UiBuilder.Draw += DrawUI;
-			this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-			this.ClientState.Login += Login;
+			PluginInterface.UiBuilder.Draw += DrawUI;
+			PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+			Service.ClientState.Login += Login;
 			LoadLandMap();
 		}
 
 		public void Dispose() {
 			SaveLandMap().Wait();
-			this.Calculate.Dispose();
-			this.PluginUi.Dispose();
-			this.CommandManager.RemoveHandler(commandName);
-			this.ClientState.Login -= Login;
-			this.PluginInterface.UiBuilder.Draw -= DrawUI;
-			this.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+			Calculate.Dispose();
+			PluginUi.Dispose();
+			Service.CommandManager.RemoveHandler(commandName);
+			Service.ClientState.Login -= Login;
+			PluginInterface.UiBuilder.Draw -= DrawUI;
+			PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
 		}
 
 		private void OnCommand(string command, string args) {
@@ -107,8 +92,7 @@ namespace WannaHome
 		}
 
 		public Task LoadLandMap() =>
-			Task.Run(async () =>
-			{
+			Task.Run(async () => {
 				var dataPath = Path.Join(this.PluginInterface.ConfigDirectory.FullName, $"LandInfo.txt");
 				if (File.Exists(dataPath)) {
 					try {
@@ -134,8 +118,7 @@ namespace WannaHome
 			});
 
 		public Task SaveLandMap() =>
-			Task.Run(() =>
-			{
+			Task.Run(() => {
 				var dataPath = Path.Join(this.PluginInterface.ConfigDirectory.FullName, $"LandInfo.txt");
 				try {
 					using (var stream = new StreamWriter(File.Open(dataPath, FileMode.Create), Encoding.UTF8)) {
@@ -150,8 +133,7 @@ namespace WannaHome
 			});
 
 		public void Login(object? sender, EventArgs e) {
-			Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ =>
-			{
+			Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ => {
 
 			});
 		}

@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using WannaHome.Common;
 using WannaHome.Data;
 using WannaHome.Model;
 using WannaHome.Model.HouseHelper;
@@ -30,7 +31,7 @@ namespace WannaHome
 			wardLandInfo.HouseList.ToList().ForEach(i => {
 				var land = new LandInfo(i.Name, (i.Info & 0b1_0000) == 0b1_0000) { Price = i.Price };
 				if (land.isEmpty && land.GetSize() >= Config.AlertSize) {
-					WannaHome.ChatGui.Print($"[{WannaHome.Plugin_Name}]{land.GetSizeStr()}：" + string.Format("{0:}{1:##}-{2:##}", Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.SlotId + 1, landList.Count + 1));
+					Service.ChatGui.Print($"[{WannaHome.Plugin_Name}]{land.GetSizeStr()}：" + string.Format("{0:}{1:##}-{2:##}", Territory.TerritoriesMap[wardLandInfo.TerritoryId].nickName, wardLandInfo.SlotId + 1, landList.Count + 1));
 				}
 				landList.Add(land);
 			});
@@ -174,7 +175,7 @@ namespace WannaHome
 			successList.Clear();
 			str.Append(">上传成功");
 			PluginLog.Information(str.ToString());
-			WannaHome.ChatGui.Print(str.ToString());
+			Service.ChatGui.Print(str.ToString());
 		}
 
 		private void CallUploadHouseHelper(Model.HouseHelper.Info info, string? token) {

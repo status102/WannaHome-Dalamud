@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using WannaHome.Common;
 using WannaHome.Data;
 using WannaHome.Structure;
 
@@ -23,7 +24,7 @@ namespace WannaHome
 
 		public HouseVote(WannaHome wannaHome) {
 			WannaHome = wannaHome;
-			territoryList = Data.Territory.Territories.Select(i => i.id).ToList();
+			territoryList = Territory.Territories.Select(i => i.id).ToList();
 		}
 
 
@@ -35,7 +36,7 @@ namespace WannaHome
 				//已出售
 				//52-04-00-00-81-02-00-00-3A-01-00-00-00-00-00-00-00-00-00-00-74-01-00-00-00-00-00-00-00-00-00-00
 				lock (obj) {
-					serverId = (ushort)(WannaHome.ClientState.LocalPlayer?.CurrentWorld.Id ?? 0);
+					serverId = (ushort)(Service.ClientState.LocalPlayer?.CurrentWorld.Id ?? 0);
 					territoryId = data.TerritoryId;
 					wardId = data.WardId;
 					houseId = data.HouseId;
@@ -47,7 +48,7 @@ namespace WannaHome
 				//51-04-00-00-D3-03-00-00-0A-13-00-00-00-00-00-00-00-00-00-00-CF-00-00-00-00-00-00-00-00-00-00-00
 				lock (obj) {
 					available = true;
-					serverId = (ushort)(WannaHome.ClientState.LocalPlayer?.CurrentWorld.Id ?? 0);
+					serverId = (ushort)(Service.ClientState.LocalPlayer?.CurrentWorld.Id ?? 0);
 					territoryId = data.TerritoryId;
 					wardId = data.WardId;
 					houseId = data.HouseId;
@@ -89,7 +90,7 @@ namespace WannaHome
 							owner = "准备中";
 						}
 
-						var territory = WannaHome.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.HousingLandSet>()?.FirstOrDefault(r => r.RowId == territoryList.IndexOf(territoryId));
+						var territory = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.HousingLandSet>()?.FirstOrDefault(r => r.RowId == territoryList.IndexOf(territoryId));
 						byte size = 0;
 						uint price = 0;
 						if (territory != null) {

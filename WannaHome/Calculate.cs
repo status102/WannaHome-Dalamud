@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using WannaHome.Common;
 using WannaHome.Data;
 using WannaHome.Structure;
 
 namespace WannaHome
 {
-    public class Calculate : IDisposable
+	public class Calculate : IDisposable
 	{
 		private StreamWriter? networkMessageWriter;
 		private const long startUnix = 1659970800, interval = 9 * 24 * 60 * 60, showDelay = 5 * 24 * 60 * 60;
@@ -21,15 +22,15 @@ namespace WannaHome
 		public bool captureOpcode { private set; get; } = false;
 		private bool voteInfoCapture = false, clientTriggerCapture = false;
 		private Dictionary<ushort, long> initOp = new(), houseOp = new();
-		private string GameVerson => WannaHome.DataManager.GameData.Repositories.First(repo => repo.Key == "ffxiv").Value.Version;
+		private string GameVerson => Service.DataManager.GameData.Repositories.First(repo => repo.Key == "ffxiv").Value.Version;
 		#region init
 		public Calculate(WannaHome wannaHome) {
 			this.WannaHome = wannaHome;
 			HouseWard = new(wannaHome);
 			HouseVote = new(wannaHome);
-			WannaHome.GameNetwork.NetworkMessage += CaptureOpcodeDelegate;
-			WannaHome.GameNetwork.NetworkMessage += NetworkMessageDelegate;
-			wannaHome.ClientState.TerritoryChanged += TerritoryChange;
+			Service.GameNetwork.NetworkMessage += CaptureOpcodeDelegate;
+			Service.GameNetwork.NetworkMessage += NetworkMessageDelegate;
+			Service.ClientState.TerritoryChanged += TerritoryChange;
 			/*
 			try {
 				FileStream stream = File.Open(Path.Join(WannaHome.PluginInterface.ConfigDirectory.FullName, String.Format("网络包{0:}.log", DateTime.Now.ToString("yyyy-MM-dd HH_mm_ss"))), FileMode.OpenOrCreate);
@@ -44,8 +45,8 @@ namespace WannaHome
 		}
 
 		public void Dispose() {
-			WannaHome.GameNetwork.NetworkMessage -= NetworkMessageDelegate;
-			WannaHome.GameNetwork.NetworkMessage -= CaptureOpcodeDelegate;
+			Service.GameNetwork.NetworkMessage -= NetworkMessageDelegate;
+			Service.GameNetwork.NetworkMessage -= CaptureOpcodeDelegate;
 
 			if (networkMessageWriter != null) {
 				networkMessageWriter.Flush();
@@ -63,25 +64,14 @@ namespace WannaHome
 		private void NetworkMessageDelegate(IntPtr dataPtr, ushort opcode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction) {
 			if (captureOpcode)
 				return;
-			var direc = direction switch
-			{
+			var direc = direction switch {
 				NetworkMessageDirection.ZoneUp => "↑Up: ",
 				NetworkMessageDirection.ZoneDown => "↓Down: ",
 				_ => "Unknown: "
 			};
-			if (Config.Debug) {
-				PluginLog.Debug($"{direc}{opcode}");
-			}
-			if (Config.SavePackage) {
-				var savePtr = dataPtr - 0x20;
-				byte[] data = new byte[2408 + 32];
-				Marshal.Copy(savePtr, data, 0, 2408 + 32);
-				networkMessageWriter?.WriteLine($"[{direc}{opcode}]{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}：{BitConverter.ToString(data)}");
-				//data.ToList().ForEach(b =>Convert.ToHexString());
-
-				networkMessageWriter?.Flush();
-			}
-			if (opcode == WannaHome.DataManager.ServerOpCodes["HousingWardInfo"])
+			if (Config.Debug) { PluginLog.Debug($"{direc}{opcode}"); }
+			
+			if (Service.DataManager.IsDataReady && opcode == Service.DataManager.ServerOpCodes["HousingWardInfo"])
 				HouseWard.onHousingWardInfo(Marshal.PtrToStructure<HousingWardInfo>(dataPtr));
 			else if (opcode == Config.ClientTriggerOpcode) {
 				//ClientTrigger
@@ -92,14 +82,13 @@ namespace WannaHome
 			if (Config.Debug && opcode == Config.DebugOpcode) {
 				byte[] data = new byte[0x20];
 				Marshal.Copy(dataPtr, data, 0, 0x20);
-				WannaHome.ChatGui.Print(BitConverter.ToString(data));
+				Service.ChatGui.Print(BitConverter.ToString(data));
 			}
 		}
 		private void CaptureOpcodeDelegate(IntPtr dataPtr, ushort opcode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction) {
 			if (!captureOpcode)
 				return;
-			var direc = direction switch
-			{
+			var direc = direction switch {
 				NetworkMessageDirection.ZoneUp => "↑Up: ",
 				NetworkMessageDirection.ZoneDown => "↓Down: ",
 				_ => "Unknown: "
@@ -114,7 +103,7 @@ namespace WannaHome
 				var int32_1 = (uint)Marshal.ReadInt32(dataPtr, 4);
 				var diff = (int32_1 - startUnix) % interval;
 				PluginLog.Debug($"尝试获取VoteInfoOpCode：{direc}Opcode：{opcode}，Byte0：{byte_0}，Byte1：{byte_1}，Byte2：{byte_2}，Int：{int32_1}，diff：{diff}");
-				if ( diff == 0 || diff == showDelay) {
+				if (diff == 0 || diff == showDelay) {
 					Config.VoteInfoOpcode = opcode;
 					voteInfoCapture = true;
 					PluginLog.Information($"VoteInfoOpCode获取成功：{Config.VoteInfoOpcode}");
@@ -139,7 +128,7 @@ namespace WannaHome
 				captureOpcode = false;
 				Config.GameVersion = GameVerson;
 				PluginLog.Information($"Opcode刷新成功，GameVersion：{Config.GameVersion}，ClientTrigger：{Config.ClientTriggerOpcode}，VoteInfo：{Config.VoteInfoOpcode}");
-				WannaHome.ChatGui.Print($"[{WannaHome.Plugin_Name}]Opcode刷新成功\nGameVersion：{Config.GameVersion}\nClientTrigger：{Config.ClientTriggerOpcode}\nVoteInfo：{Config.VoteInfoOpcode}");
+				Service.ChatGui.Print($"[{WannaHome.Plugin_Name}]Opcode刷新成功\nGameVersion：{Config.GameVersion}\nClientTrigger：{Config.ClientTriggerOpcode}\nVoteInfo：{Config.VoteInfoOpcode}");
 				Config.Save();
 			}
 		}
