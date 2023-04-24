@@ -11,10 +11,14 @@ using WannaHome.Model.WanaHome;
 
 namespace WannaHome.API
 {
-	public class WanaHome
+    public class WanaHome
     {
-        public static async Task<SyncNgld?> UploadWardLand(string url, ushort server, ushort territory_id, ushort ward_id, string data, CancellationToken cancellationToken)
-        {
+        private static readonly HttpClient client = new();
+        static WanaHome() {
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("WannaHome-Dalamud", WannaHome.Version));
+        }
+
+        public static async Task<SyncNgld?> UploadWardLand(string url, ushort server, ushort territory_id, ushort ward_id, string data, CancellationToken cancellationToken) {
             var uriBuilder = new UriBuilder(url);//	($"https://home.iinformation.info/api/sync_ngld/");
 
             List<KeyValuePair<string?, string?>> post = new() {
@@ -27,16 +31,12 @@ namespace WannaHome.API
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Wanna_Home-Dalamud", WannaHome.Version));
-
             var res = await client.PostAsync(uriBuilder.Uri, content, cancellationToken).ConfigureAwait(false);
 
             cancellationToken.ThrowIfCancellationRequested();
 
             var str = await res.Content.ReadAsStringAsync(cancellationToken);
-            if (!res.IsSuccessStatusCode)
-            {
+            if (!res.IsSuccessStatusCode) {
                 PluginLog.Error(uriBuilder.Uri + $"失败{res.StatusCode}：" + str + $"\nurl:{url}\nContent:{string.Join('&', post.Select(i => $"{i.Key}={i.Value}"))}");
                 return null;
             }
