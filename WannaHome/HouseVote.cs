@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using WannaHome.Common;
@@ -13,22 +12,21 @@ namespace WannaHome
 {
 	public class HouseVote
 	{
-		private WannaHome WannaHome;
-		private Configuration Config => WannaHome.Configuration;
-		private ushort serverId, territoryId, wardId, houseId, type;
-		private AvailableType saleType;
-		private uint voteCount, endTime, winnerIndex;
-		private bool clientTrigger = false, voteInfo = false, available = false;
-		private object obj = new();
-		private readonly List<ushort> territoryList;
+		private WannaHome WannaHome { get; init; }
+		private static Configuration Config => WannaHome.Instance.Config;
+		private static ushort serverId, territoryId, wardId, houseId, type;
+		private static AvailableType saleType;
+		private static uint voteCount, endTime, winnerIndex;
+		private static bool clientTrigger = false, voteInfo = false, available = false;
+		private static object obj = new();
+		private static readonly List<ushort> territoryList = Territory.Territories.Select(i => i.Id).ToList();
 
 		public HouseVote(WannaHome wannaHome) {
 			WannaHome = wannaHome;
-			territoryList = Territory.Territories.Select(i => i.id).ToList();
 		}
 
 
-		public void onClientTrigger(ClientTrigger data) {
+		public static void onClientTrigger(ClientTrigger data) {
 			//03前置
 			if (data.ActionId == 3 && data.HouseId == 1) {
 				Clear();
@@ -59,7 +57,7 @@ namespace WannaHome
 			}
 		}
 
-		public void onVoteInfo(VoteInfo data) {
+		public static void onVoteInfo(VoteInfo data) {
 			lock (obj) {
 				if (data.PurchaseType == PurchaseType.Lottery) {
 					voteCount = data.VoteCount;
@@ -75,7 +73,7 @@ namespace WannaHome
 		/// <summary>
 		/// 上传房屋信息
 		/// </summary>
-		private void Upload() {
+		private static void Upload() {
 			lock (obj) {
 				if (voteInfo && ((saleType == AvailableType.LotteryResult && winnerIndex > 0) || clientTrigger)) {
 					PluginLog.Debug($"上传数据：voteInfo：{voteInfo}，clientTrigger：{clientTrigger}，saleType：{saleType}");
@@ -108,12 +106,12 @@ namespace WannaHome
 								Winner = winnerIndex,
 								EndTime = endTime
 							};
-							var prefix = $"<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>";
+							var prefix = $"<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].NickName}{wardId + 1}-{houseId + 1}>";
 							var response = await API.HouseHelper.PostLottery(new() { lottery }, Config.HouseHelperToken, CancellationToken.None);
 							if (response == null) {
 								PluginLog.Warning(prefix + $"请求失败，参与：{voteCount}人，中奖：{winnerIndex}号，到期：{endTime}\nres：${response}");
 							} else {
-								PluginLog.Log(prefix + "请求成功：" + response );
+								PluginLog.Log(prefix + "请求成功：" + response);
 							}
 						} catch (Exception e) {
 							PluginLog.Warning($"上传<serverId：{serverId} territoryId：{territoryId} wardId：{wardId} houseId：{houseId}>失败：\nException：{e}");
@@ -133,7 +131,7 @@ namespace WannaHome
 								winner = winnerIndex
 							};
 							var res = await API.Web.UpdateVoteInfo(info, CancellationToken.None);
-							var prefix = $"<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].nickName}{wardId + 1}-{houseId + 1}>";
+							var prefix = $"<{Data.Server.ServerMap[serverId]} {Data.Territory.TerritoriesMap[territoryId].NickName}{wardId + 1}-{houseId + 1}>";
 							PluginLog.Debug(prefix + $"请求返回：\n{res}");
 							if (res == "null") {
 								PluginLog.Log(prefix + $"上传成功");
@@ -150,7 +148,7 @@ namespace WannaHome
 			}
 		}
 
-		private void Clear() {
+		private static void Clear() {
 			lock (obj) {
 				clientTrigger = voteInfo = available = false;
 				serverId = territoryId = wardId = houseId = type = 0;

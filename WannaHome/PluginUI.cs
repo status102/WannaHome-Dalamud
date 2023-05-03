@@ -22,7 +22,7 @@ namespace WannaHome
 		}
 
 		private WannaHome WannaHome { get; init; }
-		private Setting Setting { get; init; }
+		public Setting Setting { get; init; }
 		private LandView LandView { get; init; }
 
 		public PluginUI(WannaHome wannaHome, Configuration configuration) {
@@ -38,13 +38,6 @@ namespace WannaHome
 		}
 
 		public void Draw() {
-			// This is our only draw handler attached to UIBuilder, so it needs to be
-			// able to draw any windows we might have open.
-			// Each method checks its own visibility/state to ensure it only draws when
-			// it actually makes sense.
-			// There are other ways to do this, but it is generally best to keep the number of
-			// draw delegates as low as possible.
-
 			LandView.Draw(ref visible);
 			Setting.Draw(ref settingsVisible);
 		}

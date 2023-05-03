@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using WannaHome.Common;
 
 namespace WannaHome.Window
 {
@@ -14,12 +15,11 @@ namespace WannaHome.Window
 		private readonly static string[] size = new string[] { "全部", "M & L", "L" };
 
 		private WannaHome WannaHome { get; init; }
-		private Configuration Config => WannaHome.Configuration;
+		private Configuration Config => WannaHome.Config;
 		private static IReadOnlyDictionary<ushort, string> ServerMap => Data.Server.ServerMap;
-		private List<string> serverList { get; } = new();
-
-		public Setting(WannaHome wannaHome) {
-			this.WannaHome = wannaHome;
+		private static readonly List<string> serverList = new();
+		private bool Scanning = false;
+		static Setting() {
 			serverList.Add($"==={Data.Server.LuXingNiao.Dc_Name}===");
 			serverList.AddRange(Data.Server.LuXingNiao.Dc_World.Values);
 			serverList.Add($"==={Data.Server.MoGuLi.Dc_Name}===");
@@ -29,6 +29,8 @@ namespace WannaHome.Window
 			serverList.Add($"==={Data.Server.DouDouChai.Dc_Name}===");
 			serverList.AddRange(Data.Server.DouDouChai.Dc_World.Values);
 		}
+
+		public Setting(WannaHome wannaHome) { WannaHome = wannaHome; }
 
 		public void Draw(ref bool settingShow) {
 			if (!settingShow) { return; }
@@ -52,14 +54,14 @@ namespace WannaHome.Window
 						Config.AlertSize = (byte)index;
 						Config.Save();
 					}
-					if (WannaHome.Calculate.captureOpcode) {
+					if (Scanning) {
 						ImGui.TextUnformatted("正在手动刷新opcode中");
 					} else {
 						if (ImGui.Button("刷新opcode")) {
-							WannaHome.Calculate.CaptureOpcode();
+							ScanOpcode();
 							Task.Run(() => {
 								Thread.Sleep(30000);
-								WannaHome.Calculate.CaptureCancel();
+								OpcodeUtils.Cancel();
 							});
 						}
 						if (ImGui.IsItemHovered()) { ImGui.SetTooltip("点击后30秒内查看门牌信息手动刷新opcode"); }
@@ -143,7 +145,7 @@ namespace WannaHome.Window
 
 				if (ImGui.CollapsingHeader("HouseHelper上传Token")) {
 					bool upload = Config.UploadToHouseHelper;
-					if(ImGui.Checkbox("上传到HouseHelper", ref upload)) {
+					if (ImGui.Checkbox("上传到HouseHelper", ref upload)) {
 						Config.UploadToHouseHelper = upload;
 						Config.Save();
 					}
@@ -157,6 +159,24 @@ namespace WannaHome.Window
 				}
 				ImGui.End();
 			}
+		}
+
+		public void ScanOpcode() {
+			Scanning = true;
+			OpcodeUtils.Scan((clientTrigger, voteInfo) => {
+				Scanning = false;
+				if (clientTrigger == 0 || voteInfo == 0) {
+					Chat.PrintLog($"Opcode更新失败\nClientTrigger：{clientTrigger}\nVoteInfo：{voteInfo}");
+				} else {
+					Config.ClientTriggerOpcode = clientTrigger;
+					Config.VoteInfoOpcode = voteInfo;
+					Config.GameVersion = Service.DataManager.GameData.Repositories.First(repo => repo.Key == "ffxiv").Value.Version;
+
+					//PluginLog.Information($"Opcode刷新成功，GameVersion：{Config.GameVersion}，ClientTrigger：{Config.ClientTriggerOpcode}，VoteInfo：{Config.VoteInfoOpcode}");
+					Chat.PrintLog($"Opcode更新成功\nGameVersion：{Config.GameVersion}\nClientTrigger：{clientTrigger}\nVoteInfo：{voteInfo}");
+					Config.Save();
+				}
+			});
 		}
 
 		public void Dispose() { }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace WannaHome.Structure
@@ -40,12 +41,10 @@ namespace WannaHome.Structure
     {
         public uint Price;
 
-        /// <summary>
-        /// ()()()(1部队)()(1有房屋问候语)(1开门)()
-        /// </summary>
-        //伊修加德未开发房区：0x10
-        //白银乡的出售中房区：0x00
-        public byte Info;
+		/// <summary>
+		/// <see cref="HousingFlags"/>
+		/// </summary>
+		public HousingFlags Info;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
         public byte[] Tag;
         /// <summary>
@@ -70,5 +69,14 @@ namespace WannaHome.Structure
 	public enum TenantType : byte
 	{
 		FreeCompany = 1, Person = 2
+	}
+	[Flags]
+	public enum HousingFlags : byte
+	{
+		PlotOwned = 1 << 0,
+		VisitorsAllowed = 1 << 1,
+		HasIntroduction = 1 << 2,
+		HouseBuilt = 1 << 3,
+		OwnedByFC = 1 << 4
 	}
 }
