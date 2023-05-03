@@ -12,7 +12,7 @@
 
     https://raw.githubusercontent.com/status102/WannaHome-Dalamud/main/repo.json
 
-    对于网络环境不佳的用户，请使用镜像链接来获取插件
+    对于网络环境不佳的用户，可以尝试使用镜像链接来获取插件
 
     https://git.iid.zone/ffxiv/WannaHome-Dalamud/-/raw/main/repo_mirror.json
 
@@ -22,7 +22,7 @@
 
 可搭配Mirai插件（[WannaHome-kt](https://github.com/status102/WannaHome-kt)）使用，在QQ群中提供空地查询指令“/空地+服务器or大区”。
 
-## 感谢支持
+## 感谢支持（已全部支持数据上传）
 
 - [猹（Cettiidae）](https://github.com/Cettiidae/Cettiidae)：https://home.iinformation.info/
 - 冰音：https://wanahome.ffxiv.bingyin.org/
@@ -31,3 +31,7 @@
 ## PS
 
 屎山，满满的屎山
+
+如果有什么新点子或者什么问题，欢迎提出。
+
+If you have any idea or find any problem, please make an issue or connect with me in [discord](https://discord.gg/5bzGGyazEC)

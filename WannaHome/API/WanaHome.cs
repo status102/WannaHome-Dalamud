@@ -18,13 +18,13 @@ namespace WannaHome.API
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("WannaHome-Dalamud", WannaHome.Version));
         }
 
-        public static async Task<SyncNgld?> UploadWardLand(string url, ushort server, ushort territory_id, ushort ward_id, string data, CancellationToken cancellationToken) {
+        public static async Task<SyncNgld?> UploadWardLand(string url, ushort serverId, ushort territoryId, ushort wardId, string data, CancellationToken cancellationToken) {
             var uriBuilder = new UriBuilder(url);//	($"https://home.iinformation.info/api/sync_ngld/");
 
             List<KeyValuePair<string?, string?>> post = new() {
-                { new("server", server.ToString()) },
-                { new("territory_id", territory_id.ToString()) },
-                { new("ward_id", ward_id.ToString()) },
+                { new("server", serverId.ToString()) },
+                { new("territory_id", territoryId.ToString()) },
+                { new("ward_id", wardId.ToString()) },
                 { new("data", data) } };//{new("data",HttpUtility.UrlEncode(enc))
 
             var content = new FormUrlEncodedContent(post);

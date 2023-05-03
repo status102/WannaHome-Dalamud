@@ -13,14 +13,14 @@ using WannaHome.Model;
 
 namespace WannaHome.Window
 {
-    public class LandView : IDisposable
+	public class LandView : IDisposable
 	{
-		private static readonly Vector4 alertColor = new(255f / 255, 153f / 255, 164f / 255, 1);
-		private static readonly string[] Ward_Array = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24" };
-		private const int Width = 600, Height = 640;
+		private static readonly Vector4 ALERT_COLOR = new(255f / 255, 153f / 255, 164f / 255, 1);
+		private static readonly string[] WARD_ARRAY = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24" };
+		private const int WIDTH = 600, HEIGHT = 640;
 		private bool edit = false;
 		private WannaHome WannaHome { get; init; }
-		private Configuration Config => WannaHome.Configuration;
+		private Configuration Config => WannaHome.Config;
 
 
 		public IReadOnlyDictionary<ushort, string> ServerMap => Data.Server.ServerMap;
@@ -43,7 +43,7 @@ namespace WannaHome.Window
 
 			serverArray = serverList.Select(i => i.Value).ToArray();
 
-			territoryList = Data.Territory.Territories.Select(i => new KeyValuePair<ushort, string>(i.id, i.fullName)).ToList();
+			territoryList = Data.Territory.Territories.Select(i => new KeyValuePair<ushort, string>(i.Id, i.FullName)).ToList();
 			territoryArray = territoryList.Select(i => i.Value).ToArray();
 		}
 		public void Dispose() {
@@ -51,17 +51,23 @@ namespace WannaHome.Window
 		#endregion
 
 		public void Draw(ref bool visible) {
-			if (!visible)
-				return;
-			ImGui.SetNextWindowSize(new(Width, Height));
+			if (!visible) { return; }
+			ImGui.SetNextWindowSize(new(WIDTH, HEIGHT));
 			if (ImGui.Begin("地皮信息", ref visible)) {
 
-				#region 上区块，选择查看缓存的地皮信息
+				List<LandInfo> landList = new();
+				try {
+					landList = WannaHome.landMap[WannaHome.ServerId][WannaHome.TerritoryId][WannaHome.WardId];
+				} catch (KeyNotFoundException) {
+					// 如果未录入
+					for (int i = 0; i < 60; i++) { landList.Add(new()); }
+				}
 
+				#region 上区块，选择查看缓存的地皮信息
 				var serverIndex = -1;
-				if (ServerMap.ContainsKey(WannaHome.serverId)) {
+				if (ServerMap.ContainsKey(WannaHome.ServerId)) {
 					for (int i = 0; i < serverList.Count; i++) {
-						if (serverList[i].Key == WannaHome.serverId) {
+						if (serverList[i].Key == WannaHome.ServerId) {
 							serverIndex = i;
 							break;
 						}
@@ -69,22 +75,23 @@ namespace WannaHome.Window
 				}
 				ImGui.SetNextItemWidth(160);
 				if (ImGui.Combo($"##Server", ref serverIndex, serverArray, serverArray.Length)) {
-					if (serverList[serverIndex].Key != 0)
-						WannaHome.serverId = serverList[serverIndex].Key;
+					if (serverList[serverIndex].Key != 0) {
+						WannaHome.ServerId = serverList[serverIndex].Key;
+					}
 				}
 
-				var territoryIndex = territoryList.Select(i => i.Key).ToList().IndexOf(WannaHome.territoryId);
+				var territoryIndex = territoryList.Select(i => i.Key).ToList().IndexOf(WannaHome.TerritoryId);
 				ImGui.SetNextItemWidth(120);
 				ImGui.SameLine();
 				if (ImGui.Combo($"##Territory", ref territoryIndex, territoryArray, territoryArray.Length)) {
-					WannaHome.territoryId = territoryList[territoryIndex].Key;
+					WannaHome.TerritoryId = territoryList[territoryIndex].Key;
 				}
 
-				int wardIndex = WannaHome.wardId;
+				int wardIndex = WannaHome.WardId;
 				ImGui.SetNextItemWidth(80);
 				ImGui.SameLine();
-				if (ImGui.Combo($"##Ward", ref wardIndex, Ward_Array, Ward_Array.Length)) {
-					WannaHome.wardId = (ushort)wardIndex;
+				if (ImGui.Combo($"##Ward", ref wardIndex, WARD_ARRAY, WARD_ARRAY.Length)) {
+					WannaHome.WardId = (ushort)wardIndex;
 				}
 
 				ImGui.SameLine();
@@ -96,89 +103,58 @@ namespace WannaHome.Window
 				if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
 					WannaHome.PluginUi.SettingsVisible = !WannaHome.PluginUi.SettingsVisible;
 
+				#region 手动发送地皮信息到指定服务器
+#if DEBUG
+
+				ImGui.SameLine();
+				if (ImGui.Button("手动上传")) {
+					Config.Token.Where(i => i.enable && i.serverId == WannaHome.ServerId).ToList()
+						.ForEach(async token => {
+							if (string.IsNullOrEmpty(token.url) || string.IsNullOrEmpty(token.token)) {
+							} else {
+								var title = string.Format("<{0:} {1:}-{2:}{3:}区>手动", token.nickname, Data.Server.ServerMap[WannaHome.ServerId], Data.Territory.TerritoriesMap[WannaHome.TerritoryId].NickName, WannaHome.WardId + 1);
+								try {
+									var res = await API.WanaHome.UploadWardLand(token.url, WannaHome.ServerId, WannaHome.TerritoryId, WannaHome.WardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
+									if (res != null) {
+										if (res.code == 200) {
+											Chat.PrintLog($"{title}上传成功");
+										} else
+											Chat.PrintError($"{title}上传失败：{res.code}-{res.msg}");
+									} else {
+										Chat.PrintError($"{title}上传出错：返回空");
+									}
+								} catch (HttpRequestException e) {
+									Chat.PrintError($"{title}上传出错：{e}");
+								}
+							}
+						});
+				}
+#endif
+				#endregion
 
 				#endregion
-				List<LandInfo> landList = new();
-				try {
-					landList = WannaHome.landMap[WannaHome.serverId][WannaHome.territoryId][WannaHome.wardId];
-				} catch (KeyNotFoundException) {
-					for (int i = 0; i < 60; i++)
-						landList.Add(new());
-				}
 
 				if (ImGui.BeginTabBar("##扩展区")) {
+					ImGui.SetNextItemWidth(WIDTH / 2);
 					if (ImGui.BeginTabItem("1-30号")) {
 						DrawLandTable(false, landList);
 						ImGui.EndTabItem();
 					}
+					ImGui.SetNextItemWidth(WIDTH / 2);
 					if (ImGui.BeginTabItem("31-60号")) {
 						DrawLandTable(true, landList);
 						ImGui.EndTabItem();
 					}
 					ImGui.EndTabBar();
 				}
-#if DEBUG
-				#region 下区块，发送地皮信息到指定服务器
-				serverIndex = -1;
-				if (ServerMap.ContainsKey(WannaHome.sendServerId)) {
-					for (int i = 0; i < serverList.Count; i++) {
-						if (serverList[i].Key == WannaHome.sendServerId) {
-							serverIndex = i;
-							break;
-						}
-					}
-				}
-				ImGui.SetNextItemWidth(160);
-				if (ImGui.Combo($"##SendServer", ref serverIndex, serverArray, serverArray.Length)) {
-					if (serverList[serverIndex].Key != 0)
-						WannaHome.sendServerId = serverList[serverIndex].Key;
-				}
 
-				territoryIndex = territoryList.Select(i => i.Key).ToList().IndexOf(WannaHome.sendTerritoryId);
-				ImGui.SetNextItemWidth(120);
-				ImGui.SameLine();
-				if (ImGui.Combo($"##SendTerritory", ref territoryIndex, territoryArray, territoryArray.Length)) {
-					WannaHome.sendTerritoryId = territoryList[territoryIndex].Key;
-				}
-
-				wardIndex = WannaHome.sendWardId;
-				ImGui.SetNextItemWidth(80);
-				ImGui.SameLine();
-				if (ImGui.Combo($"##SendWard", ref wardIndex, Ward_Array, Ward_Array.Length)) {
-					WannaHome.sendWardId = (ushort)wardIndex;
-				}
-
-				ImGui.SameLine();
-				if (ImGui.Button("手动上传")) {
-					Config.Token.ForEach(async token =>
-					{
-						if (token.serverId != WannaHome.sendServerId) { } else if (!token.enable || string.IsNullOrEmpty(token.url) || string.IsNullOrEmpty(token.token)) { } else {
-							var title = string.Format("<{0:} {1:}-{2:}{3:}区>手动", token.nickname, Data.Server.ServerMap[WannaHome.sendServerId], Data.Territory.TerritoriesMap[WannaHome.sendTerritoryId].nickName, WannaHome.sendWardId + 1);
-							try {
-								var res = await API.WanaHome.UploadWardLand(token.url, WannaHome.sendServerId, WannaHome.sendTerritoryId, WannaHome.sendWardId, token.Encrypt(landList.ToArray()), CancellationToken.None);
-								if (res != null) {
-									if (res.code == 200) {
-										Service.ChatGui.Print($"{title}上传成功");
-									} else
-										Service.ChatGui.PrintError($"{title}上传失败：{res.code}-{res.msg}");
-								} else {
-									Service.ChatGui.PrintError($"{title}上传出错：返回空");
-								}
-							} catch (HttpRequestException e) {
-								Service.ChatGui.PrintError($"{title}上传出错：{e}");
-							}
-						}
-					});
-				}
-				#endregion
-#endif
 				ImGui.End();
 			}
 		}
 
 		private void DrawLandTable(bool isExtra, IReadOnlyList<LandInfo> landList) {
 
-			if (ImGui.BeginTable("##房屋信息表", 4, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersInnerV)) {
+			if (ImGui.BeginTable("##房屋信息表", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersInnerV)) {
 
 				ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 20);
 				ImGui.TableSetupColumn("房主/价格", ImGuiTableColumnFlags.WidthStretch);
@@ -202,14 +178,20 @@ namespace WannaHome.Window
 
 			if (i < landList.Count) {
 				if (!edit) {
-					if (!landList[i].Owner.IsNullOrEmpty()) {
+					if (!landList[i].IsOnSell()) {
+						ImGui.TextDisabled("不可出售");
+					} else if (!landList[i].Owner.IsNullOrEmpty()) {
+						// 正常输出
 						ImGui.TextDisabled(landList[i].Owner);
+					} else if (landList[i].Price > 0 && landList[i].GetSize() >= Config.AlertSize)
+						ImGui.TextColored(ALERT_COLOR, $"{landList[i].Price:#,##0}");
+					else if (landList[i].Price > 0) {
+						ImGui.TextUnformatted($"{landList[i].Price:#,##0}");
 					} else {
-						if (landList[i].GetSize() >= Config.AlertSize)
-							ImGui.TextColored(alertColor, $"{landList[i].Price:#,##0}");
-						else
-							ImGui.TextUnformatted($"{landList[i].Price:#,##0}");
+						//考虑增加一下未录入时候输出默认价格
+						ImGui.TextDisabled($"----");
 					}
+
 				} else {
 					var editStr = $"{landList[i].Owner}/{landList[i].Price:#,##0}";
 					if (ImGui.InputText($"##{i}-{editStr}", ref editStr, 256)) {

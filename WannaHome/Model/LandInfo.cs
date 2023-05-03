@@ -8,16 +8,16 @@ namespace WannaHome.Model
 	public class LandInfo
 	{
 		private readonly static byte[] LAND_SHOW = new byte[] { 0x00, 0x35, 0x02, 0x00, 0x00, 0x00, 0x00, 0x93, 0x65, 0x2C, 0x02 };
-		private bool _show = false;
+		private bool onsell = true;
 		public byte[] name { get; set; } = new byte[32];
 		public string Owner { get; set; } = "";
 		public uint Price { get; set; }
 		public LandInfo() { }
 
-		public LandInfo(byte[] name, bool isFreeCompany) {
-			if (Enumerable.SequenceEqual(LandInfo.LAND_SHOW, name)) {
+		public LandInfo(byte[] name, bool isFreeCompany = false) {
+			if (Enumerable.SequenceEqual(LAND_SHOW, name)) {
 				Owner = "不可出售";
-				_show = true;
+				onsell = false;
 			} else {
 				Owner = name[0] != 0 ? Encoding.UTF8.GetString(name).TrimEnd('\u0000') : "";
 			}
@@ -37,7 +37,7 @@ namespace WannaHome.Model
 			if (Price <= 20000000) { return "M"; }
 			return "L";
 		}
-		public bool IsOnShow() { return _show; }
+		public bool IsOnSell() { return onsell; }
 		[Newtonsoft.Json.JsonIgnore]
 		public bool isEmpty => string.IsNullOrEmpty(Owner);
 

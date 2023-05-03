@@ -10,9 +10,9 @@ namespace WannaHome
 	[Serializable]
 	public class PluginData
 	{
-		public ushort serverId { get; set; }
-		public ushort territoryId { get; set; }
-		public ushort wardId { get; set; }
+		public ushort ServerId { get; set; }
+		public ushort TerritoryId { get; set; }
+		public ushort WardId { get; set; }
 		public Dictionary<ushort, Dictionary<ushort, Dictionary<ushort, List<LandInfo>>>> LandInfo { get; set; } = new();
 	}
 }

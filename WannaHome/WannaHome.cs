@@ -1,7 +1,4 @@
-﻿using Dalamud.Data;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
+﻿using Dalamud.Game.Command;
 using Dalamud.Game.Network;
 using Dalamud.IoC;
 using Dalamud.Logging;
@@ -9,17 +6,21 @@ using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using WannaHome.Common;
+using WannaHome.Data;
 using WannaHome.Model;
+using WannaHome.Structure;
 
 namespace WannaHome
 {
 	public sealed class WannaHome : IDalamudPlugin
 	{
-		public static WannaHome? Instance { get; private set; }
+		public static WannaHome Instance { get; private set; }
 		public const string Plugin_Name = "WannaHome";
 		public string Name => "Wanna Home";
 		public static string Version => System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
@@ -28,16 +29,14 @@ namespace WannaHome
 
 		public DalamudPluginInterface PluginInterface { get; init; }
 		public PluginUI PluginUi { get; init; }
-		public Configuration Configuration { get; init; }
-		public Calculate Calculate { get; init; }
+		public Configuration Config { get; init; }
 
 		/// <summary>
 		/// 服务器ID-房区ID-房区序号-List
 		/// </summary>
 		public Dictionary<ushort, Dictionary<ushort, Dictionary<ushort, List<LandInfo>>>> landMap = new();
 
-		public ushort serverId = 0, territoryId = 0, wardId = 0;
-		public ushort sendServerId, sendTerritoryId, sendWardId;
+		public ushort ServerId = 0, TerritoryId = 0, WardId = 0;
 
 		public WannaHome(
 			[RequiredVersion("1.0")] DalamudPluginInterface pluginInterface
@@ -47,11 +46,10 @@ namespace WannaHome
 			Service.Initialize(pluginInterface);
 
 
-			Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-			Configuration.Initialize(this.PluginInterface);
+			Config = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+			Config.Initialize(this.PluginInterface);
 
-			PluginUi = new PluginUI(this, Configuration);
-			Calculate = new Calculate(this);
+			PluginUi = new PluginUI(this, Config);
 
 			Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand) {
 				HelpMessage = "打开主界面；\n/wh cfg打开设置界面"
@@ -60,17 +58,20 @@ namespace WannaHome
 			PluginInterface.UiBuilder.Draw += DrawUI;
 			PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 			Service.ClientState.Login += Login;
+			Service.ClientState.TerritoryChanged += TerritoryChange;
+			Service.GameNetwork.NetworkMessage += NetworkMessageDelegate;
 			LoadLandMap();
 		}
 
 		public void Dispose() {
-			SaveLandMap().Wait();
-			Calculate.Dispose();
 			PluginUi.Dispose();
 			Service.CommandManager.RemoveHandler(commandName);
-			Service.ClientState.Login -= Login;
 			PluginInterface.UiBuilder.Draw -= DrawUI;
 			PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+			Service.ClientState.Login -= Login;
+			Service.ClientState.TerritoryChanged -= TerritoryChange;
+			Service.GameNetwork.NetworkMessage -= NetworkMessageDelegate;
+			SaveLandMap().Wait();
 		}
 
 		private void OnCommand(string command, string args) {
@@ -91,6 +92,21 @@ namespace WannaHome
 			this.PluginUi.SettingsVisible = true;
 		}
 
+		public void SaveLandList(ushort serverId, ushort territoryId, ushort wardId, List<LandInfo> landList) {
+			ServerId = serverId;
+			TerritoryId = territoryId;
+			WardId = wardId;
+
+			if (landMap.ContainsKey(serverId)) {
+				if (landMap[serverId].ContainsKey(territoryId)) {
+					landMap[serverId][territoryId][wardId] = landList;
+				} else {
+					landMap[serverId][territoryId] = new() { { wardId, landList } };
+				}
+			} else {
+				landMap[serverId] = new() { { territoryId, new() { { wardId, landList } } } };
+			}
+		}
 		public Task LoadLandMap() =>
 			Task.Run(async () => {
 				var dataPath = Path.Join(this.PluginInterface.ConfigDirectory.FullName, $"LandInfo.txt");
@@ -100,12 +116,9 @@ namespace WannaHome
 							var str = await stream.ReadToEndAsync();
 							var data = JsonSerializer.Deserialize<PluginData>(str);
 							if (data != null) {
-								serverId = data.serverId;
-								sendServerId = data.serverId;
-								territoryId = data.territoryId;
-								sendTerritoryId = data.territoryId;
-								wardId = data.wardId;
-								sendWardId = data.wardId;
+								ServerId = data.ServerId;
+								TerritoryId = data.TerritoryId;
+								WardId = data.WardId;
 								landMap = data.LandInfo;
 								PluginLog.Debug($"LandMap导入成功");
 							}
@@ -122,7 +135,7 @@ namespace WannaHome
 				var dataPath = Path.Join(this.PluginInterface.ConfigDirectory.FullName, $"LandInfo.txt");
 				try {
 					using (var stream = new StreamWriter(File.Open(dataPath, FileMode.Create), Encoding.UTF8)) {
-						PluginData data = new() { serverId = serverId, territoryId = territoryId, wardId = wardId, LandInfo = landMap };
+						PluginData data = new() { ServerId = ServerId, TerritoryId = TerritoryId, WardId = WardId, LandInfo = landMap };
 						stream.Write(JsonSerializer.Serialize(data));
 						stream.Flush();
 						PluginLog.Debug($"LandMap保存成功");
@@ -132,10 +145,42 @@ namespace WannaHome
 				}
 			});
 
-		public void Login(object? sender, EventArgs e) {
+		private void Login(object? sender, EventArgs e) {
 			Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ => {
 
 			});
+		}
+		private void TerritoryChange(object? sender, ushort territoryId) {
+
+			var gameVersion = Service.DataManager.GameData.Repositories.First(repo => repo.Key == "ffxiv").Value.Version;
+			if (Territory.TerritoriesMap.ContainsKey(territoryId) && Config.GameVersion != gameVersion) {
+				PluginUi.Setting.ScanOpcode();
+			}
+		}
+		private void NetworkMessageDelegate(IntPtr dataPtr, ushort opcode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction) {
+
+			if (Service.DataManager.IsDataReady && opcode == Service.DataManager.ServerOpCodes["HousingWardInfo"]) {
+				HouseWard.onHousingWardInfo(Marshal.PtrToStructure<HousingWardInfo>(dataPtr));
+			} else if (opcode == Config.ClientTriggerOpcode) {
+				HouseVote.onClientTrigger(Marshal.PtrToStructure<ClientTrigger>(dataPtr));
+			} else if (opcode == Config.VoteInfoOpcode) {
+				HouseVote.onVoteInfo(Marshal.PtrToStructure<VoteInfo>(dataPtr));
+			}
+
+			if (Config.Debug) {
+				var direc = direction switch {
+					NetworkMessageDirection.ZoneUp => "↑Up: ",
+					NetworkMessageDirection.ZoneDown => "↓Down: ",
+					_ => "Unknown: "
+				};
+				PluginLog.Debug($"{direc}{opcode}");
+
+				if (opcode == Config.DebugOpcode) {
+					byte[] data = new byte[0x20];
+					Marshal.Copy(dataPtr, data, 0, 0x20);
+					Service.ChatGui.Print(BitConverter.ToString(data));
+				}
+			}
 		}
 	}
 }
